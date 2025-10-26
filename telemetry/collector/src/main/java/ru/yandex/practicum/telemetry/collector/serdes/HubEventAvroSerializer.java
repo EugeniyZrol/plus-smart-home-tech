@@ -1,20 +1,19 @@
 package ru.yandex.practicum.telemetry.collector.serdes;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.avro.io.BinaryEncoder;
 import org.apache.avro.io.DatumWriter;
 import org.apache.avro.io.EncoderFactory;
 import org.apache.avro.specific.SpecificDatumWriter;
 import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.common.serialization.Serializer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import ru.yandex.practicum.kafka.telemetry.event.HubEventAvro;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
+@Slf4j
 public class HubEventAvroSerializer implements Serializer<HubEventAvro> {
-    private static final Logger log = LoggerFactory.getLogger(HubEventAvroSerializer.class);
 
     @Override
     public byte[] serialize(String topic, HubEventAvro event) {

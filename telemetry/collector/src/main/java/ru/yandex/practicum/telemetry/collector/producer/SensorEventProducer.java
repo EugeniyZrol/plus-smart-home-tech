@@ -1,5 +1,6 @@
 package ru.yandex.practicum.telemetry.collector.producer;
 
+import ru.yandex.practicum.kafka.telemetry.event.SensorEventAvro;
 import ru.yandex.practicum.telemetry.collector.converter.SensorEventToAvroConverter;
 import ru.yandex.practicum.telemetry.collector.event.dto.SensorEvent;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +22,7 @@ public class SensorEventProducer {
 
     public void sendSensorEvent(SensorEvent event) {
         try {
-            var avroEvent = converter.convert(event);
+            SensorEventAvro avroEvent = converter.convert(event);
             byte[] serializedData = serializer.serialize(TOPIC, avroEvent);
 
             kafkaTemplate.send(TOPIC, event.getId(), serializedData)

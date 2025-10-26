@@ -1,5 +1,6 @@
 package ru.yandex.practicum.telemetry.collector.producer;
 
+import ru.yandex.practicum.kafka.telemetry.event.HubEventAvro;
 import ru.yandex.practicum.telemetry.collector.converter.HubEventToAvroConverter;
 import ru.yandex.practicum.telemetry.collector.event.dto.HubEvent;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +22,7 @@ public class HubEventProducer {
 
     public void sendHubEvent(HubEvent event) {
         try {
-            var avroEvent = converter.convert(event);
+            HubEventAvro avroEvent = converter.convert(event);
             byte[] serializedData = serializer.serialize(TOPIC, avroEvent);
 
             kafkaTemplate.send(TOPIC, event.getHubId(), serializedData)
