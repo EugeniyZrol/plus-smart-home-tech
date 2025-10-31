@@ -1,0 +1,120 @@
+@namespace("ru.yandex.practicum.kafka.telemetry.event")
+protocol TelemetryEvents {
+
+    // ===== ENUMS =====
+    enum ActionTypeAvro {
+        ACTIVATE,
+        DEACTIVATE,
+        INVERSE,
+        SET_VALUE
+    }
+
+    enum ConditionOperationAvro {
+        EQUALS,
+        GREATER_THAN,
+        LOWER_THAN
+    }
+
+    enum ConditionTypeAvro {
+        MOTION,
+        LUMINOSITY,
+        SWITCH,
+        TEMPERATURE,
+        CO2LEVEL,
+        HUMIDITY
+    }
+
+    enum DeviceTypeAvro {
+        MOTION_SENSOR,
+        TEMPERATURE_SENSOR,
+        LIGHT_SENSOR,
+        CLIMATE_SENSOR,
+        SWITCH_SENSOR
+    }
+
+    // ===== RECORDS =====
+
+    record DeviceActionAvro {
+        string sensorId;
+        ActionTypeAvro type;
+        union { null, int } value = null;
+    }
+
+    record DeviceAddedEventAvro {
+        string id;
+        DeviceTypeAvro type;
+    }
+
+    record DeviceRemovedEventAvro {
+        string id;
+    }
+
+    record ScenarioConditionAvro {
+        string sensorId;
+        ConditionTypeAvro type;
+        ConditionOperationAvro operation;
+        union { null, int } value = null;
+    }
+
+    record ScenarioAddedEventAvro {
+        string name;
+        array<ScenarioConditionAvro> conditions;
+        array<DeviceActionAvro> actions;
+    }
+
+    record ScenarioRemovedEventAvro {
+        string name;
+    }
+
+    record ClimateSensorAvro {
+        int temperatureC;
+        int humidity;
+        int co2Level;
+    }
+
+    record LightSensorAvro {
+        int linkQuality;
+        int luminosity;
+    }
+
+    record MotionSensorAvro {
+        int linkQuality;
+        boolean motion;
+        int voltage;
+    }
+
+    record SwitchSensorAvro {
+        boolean state;
+    }
+
+    record TemperatureSensorAvro {
+        int temperatureC;
+        int temperatureF;
+    }
+
+    // ===== MAIN EVENTS =====
+
+    record SensorEventAvro {
+        string id;
+        string hubId;
+        long timestamp;
+        union {
+            ClimateSensorAvro,
+            LightSensorAvro,
+            MotionSensorAvro,
+            SwitchSensorAvro,
+            TemperatureSensorAvro
+        } payload;
+    }
+
+    record HubEventAvro {
+        string hubId;
+        long timestamp;
+        union {
+            DeviceAddedEventAvro,
+            DeviceRemovedEventAvro,
+            ScenarioAddedEventAvro,
+            ScenarioRemovedEventAvro
+        } payload;
+    }
+}
