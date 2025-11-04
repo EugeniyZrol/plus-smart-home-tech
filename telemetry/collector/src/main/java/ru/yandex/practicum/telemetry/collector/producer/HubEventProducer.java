@@ -7,7 +7,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
-import ru.yandex.practicum.telemetry.collector.serdes.HubEventAvroSerializer;
+import ru.yandex.practicum.telemetry.collector.serdes.serializer.HubEventAvroSerializer;
 
 @Slf4j
 @Service

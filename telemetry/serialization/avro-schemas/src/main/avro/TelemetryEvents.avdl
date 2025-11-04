@@ -1,7 +1,6 @@
 @namespace("ru.yandex.practicum.kafka.telemetry.event")
 protocol TelemetryEvents {
 
-    // ===== ENUMS =====
     enum ActionTypeAvro {
         ACTIVATE,
         DEACTIVATE,
@@ -31,8 +30,6 @@ protocol TelemetryEvents {
         CLIMATE_SENSOR,
         SWITCH_SENSOR
     }
-
-    // ===== RECORDS =====
 
     record DeviceActionAvro {
         string sensorId;
@@ -92,7 +89,22 @@ protocol TelemetryEvents {
         int temperatureF;
     }
 
-    // ===== MAIN EVENTS =====
+    record SensorStateAvro {
+        long timestamp;
+        union {
+            ClimateSensorAvro,
+            LightSensorAvro,
+            MotionSensorAvro,
+            SwitchSensorAvro,
+            TemperatureSensorAvro
+        } data;
+    }
+
+    record SensorsSnapshotAvro {
+        string hubId;
+        long timestamp;
+        map<SensorStateAvro> sensorsState;
+    }
 
     record SensorEventAvro {
         string id;
