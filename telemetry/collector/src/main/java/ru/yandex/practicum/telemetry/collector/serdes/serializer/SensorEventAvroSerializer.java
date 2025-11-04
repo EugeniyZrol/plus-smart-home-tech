@@ -1,4 +1,4 @@
-package ru.yandex.practicum.telemetry.collector.serdes;
+package ru.yandex.practicum.telemetry.collector.serdes.serializer;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.avro.io.BinaryEncoder;
@@ -7,22 +7,22 @@ import org.apache.avro.io.EncoderFactory;
 import org.apache.avro.specific.SpecificDatumWriter;
 import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.common.serialization.Serializer;
-import ru.yandex.practicum.kafka.telemetry.event.HubEventAvro;
+import ru.yandex.practicum.kafka.telemetry.event.SensorEventAvro;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 @Slf4j
-public class HubEventAvroSerializer implements Serializer<HubEventAvro> {
+public class SensorEventAvroSerializer implements Serializer<SensorEventAvro> {
 
     @Override
-    public byte[] serialize(String topic, HubEventAvro event) {
+    public byte[] serialize(String topic, SensorEventAvro event) {
         if (event == null) {
             return null;
         }
 
         try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
-            DatumWriter<HubEventAvro> datumWriter = new SpecificDatumWriter<>(HubEventAvro.class);
+            DatumWriter<SensorEventAvro> datumWriter = new SpecificDatumWriter<>(SensorEventAvro.class);
             BinaryEncoder encoder = EncoderFactory.get().binaryEncoder(outputStream, null);
 
             datumWriter.write(event, encoder);
@@ -31,8 +31,8 @@ public class HubEventAvroSerializer implements Serializer<HubEventAvro> {
             return outputStream.toByteArray();
 
         } catch (IOException e) {
-            log.error("Ошибка сериализации HubEventAvro", e);
-            throw new SerializationException("Ошибка сериализации HubEventAvro", e);
+            log.error("Ошибка сериализации SensorEventAvro", e);
+            throw new SerializationException("Ошибка сериализации SensorEventAvro", e);
         }
     }
 }
