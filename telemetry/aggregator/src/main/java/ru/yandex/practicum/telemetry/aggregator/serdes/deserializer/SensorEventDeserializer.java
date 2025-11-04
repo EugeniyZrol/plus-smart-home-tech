@@ -1,4 +1,4 @@
-package ru.yandex.practicum.telemetry.collector.serdes.deserializer;
+package ru.yandex.practicum.telemetry.aggregator.serdes.deserializer;
 
 import ru.yandex.practicum.kafka.telemetry.event.SensorEventAvro;
 

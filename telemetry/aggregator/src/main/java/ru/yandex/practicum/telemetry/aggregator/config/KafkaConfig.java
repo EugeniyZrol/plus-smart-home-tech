@@ -25,7 +25,7 @@ public class KafkaConfig {
         props.put("auto.offset.reset", "earliest");
         props.put("enable.auto.commit", "false");
         props.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
-        props.put("value.deserializer", "ru.yandex.practicum.telemetry.collector.serdes.deserializer.SensorEventDeserializer");
+        props.put("value.deserializer", "ru.yandex.practicum.telemetry.aggregator.serdes.deserializer.SensorEventDeserializer");
         return new KafkaConsumer<>(props);
     }
 
@@ -34,7 +34,7 @@ public class KafkaConfig {
         Properties props = new Properties();
         props.put("bootstrap.servers", bootstrapServers);
         props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
-        props.put("value.serializer", "ru.yandex.practicum.telemetry.collector.serdes.serializer.SensorsSnapshotSerializer");
+        props.put("value.serializer", "ru.yandex.practicum.telemetry.aggregator.serdes.SensorsSnapshotSerializer");
         props.put("acks", "all");
         props.put("retries", 3);
         props.put("linger.ms", 10);

@@ -1,4 +1,4 @@
-package ru.yandex.practicum.telemetry.collector.serdes.serializer;
+package ru.yandex.practicum.telemetry.aggregator.serdes;
 
 import org.apache.avro.io.BinaryEncoder;
 import org.apache.avro.io.DatumWriter;

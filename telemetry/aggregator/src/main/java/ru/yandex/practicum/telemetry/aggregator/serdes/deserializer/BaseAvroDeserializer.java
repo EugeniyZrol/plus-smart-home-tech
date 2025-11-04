@@ -1,4 +1,4 @@
-package ru.yandex.practicum.telemetry.collector.serdes.deserializer;
+package ru.yandex.practicum.telemetry.aggregator.serdes.deserializer;
 
 import org.apache.avro.Schema;
 import org.apache.avro.io.DatumReader;
