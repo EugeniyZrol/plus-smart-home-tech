@@ -5,11 +5,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.yandex.practicum.kafka.telemetry.event.*;
+
 import ru.yandex.practicum.telemetry.analyzer.entity.*;
 import ru.yandex.practicum.telemetry.analyzer.repository.*;
-import ru.yandex.practicum.telemetry.collector.event.enums.ConditionType;
-import ru.yandex.practicum.telemetry.collector.event.enums.ConditionOperation;
-import ru.yandex.practicum.telemetry.collector.event.enums.ActionType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -94,8 +92,8 @@ public class ScenarioStorageService {
                 continue;
             }
 
-            ConditionType type = convertConditionType(conditionAvro.getType());
-            ConditionOperation operation = convertConditionOperation(conditionAvro.getOperation());
+            ConditionTypeAvro type = conditionAvro.getType();
+            ConditionOperationAvro operation = conditionAvro.getOperation();
 
             Condition condition = new Condition(
                     type,
@@ -124,7 +122,7 @@ public class ScenarioStorageService {
                 continue;
             }
 
-            ActionType type = convertActionType(actionAvro.getType());
+            ActionTypeAvro type = actionAvro.getType();
 
             Action action = new Action(
                     type,
@@ -176,13 +174,10 @@ public class ScenarioStorageService {
             Condition condition = sc.getCondition();
             Sensor sensor = sc.getSensor();
 
-            ConditionTypeAvro typeAvro = convertConditionTypeToAvro(condition.getType());
-            ConditionOperationAvro operationAvro = convertConditionOperationToAvro(condition.getOperation());
-
             ScenarioConditionAvro conditionAvro = ScenarioConditionAvro.newBuilder()
                     .setSensorId(sensor.getId())
-                    .setType(typeAvro)
-                    .setOperation(operationAvro)
+                    .setType(condition.getType())
+                    .setOperation(condition.getOperation())
                     .setValue(condition.getValue())
                     .build();
             conditionsAvro.add(conditionAvro);
@@ -193,11 +188,9 @@ public class ScenarioStorageService {
             Action action = sa.getAction();
             Sensor sensor = sa.getSensor();
 
-            ActionTypeAvro typeAvro = convertActionTypeToAvro(action.getType());
-
             DeviceActionAvro actionAvro = DeviceActionAvro.newBuilder()
                     .setSensorId(sensor.getId())
-                    .setType(typeAvro)
+                    .setType(action.getType())
                     .setValue(action.getValue())
                     .build();
             actionsAvro.add(actionAvro);
@@ -213,29 +206,5 @@ public class ScenarioStorageService {
     @Transactional(readOnly = true)
     public boolean deviceExists(String hubId, String deviceId) {
         return sensorRepository.findByIdAndHubId(deviceId, hubId).isPresent();
-    }
-
-    private ConditionType convertConditionType(ConditionTypeAvro avroType) {
-        return ConditionType.valueOf(avroType.name());
-    }
-
-    private ConditionOperation convertConditionOperation(ConditionOperationAvro avroOperation) {
-        return ConditionOperation.valueOf(avroOperation.name());
-    }
-
-    private ActionType convertActionType(ActionTypeAvro avroType) {
-        return ActionType.valueOf(avroType.name());
-    }
-
-    private ConditionTypeAvro convertConditionTypeToAvro(ConditionType type) {
-        return ConditionTypeAvro.valueOf(type.name());
-    }
-
-    private ConditionOperationAvro convertConditionOperationToAvro(ConditionOperation operation) {
-        return ConditionOperationAvro.valueOf(operation.name());
-    }
-
-    private ActionTypeAvro convertActionTypeToAvro(ActionType type) {
-        return ActionTypeAvro.valueOf(type.name());
     }
 }

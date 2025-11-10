@@ -2,8 +2,8 @@ package ru.yandex.practicum.telemetry.analyzer.entity;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import ru.yandex.practicum.telemetry.collector.event.enums.ConditionType;
-import ru.yandex.practicum.telemetry.collector.event.enums.ConditionOperation;
+import ru.yandex.practicum.kafka.telemetry.event.ConditionTypeAvro;
+import ru.yandex.practicum.kafka.telemetry.event.ConditionOperationAvro;
 
 import jakarta.persistence.*;
 
@@ -19,16 +19,16 @@ public class Condition {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false)
-    private ConditionType type;
+    private ConditionTypeAvro type;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "operation", nullable = false)
-    private ConditionOperation operation;
+    private ConditionOperationAvro operation;
 
     @Column(name = "value")
     private Integer value;
 
-    public Condition(ConditionType type, ConditionOperation operation, Integer value) {
+    public Condition(ConditionTypeAvro type, ConditionOperationAvro operation, Integer value) {
         this.type = type;
         this.operation = operation;
         this.value = value;

@@ -7,8 +7,6 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.yandex.practicum.kafka.telemetry.event.*;
 import ru.yandex.practicum.telemetry.analyzer.entity.*;
 import ru.yandex.practicum.telemetry.analyzer.repository.*;
-import ru.yandex.practicum.telemetry.collector.event.enums.ActionType;
-import ru.yandex.practicum.telemetry.collector.event.enums.ConditionOperation;
 
 import java.util.List;
 
@@ -199,7 +197,7 @@ public class ScenarioProcessorService {
         return null;
     }
 
-    private boolean compareValues(int actual, int expected, ConditionOperation operation) {
+    private boolean compareValues(int actual, int expected, ConditionOperationAvro operation) {
         return switch (operation) {
             case EQUALS -> actual == expected;
             case GREATER_THAN -> actual > expected;
@@ -220,7 +218,7 @@ public class ScenarioProcessorService {
 
             DeviceActionAvro actionAvro = DeviceActionAvro.newBuilder()
                     .setSensorId(sensor.getId())
-                    .setType(convertActionTypeToAvro(action.getType()))
+                    .setType(action.getType())
                     .setValue(action.getValue())
                     .build();
 
@@ -233,9 +231,5 @@ public class ScenarioProcessorService {
                         scenario.getName(), sensor.getId(), e);
             }
         }
-    }
-
-    private ActionTypeAvro convertActionTypeToAvro(ActionType type) {
-        return ActionTypeAvro.valueOf(type.name());
     }
 }
