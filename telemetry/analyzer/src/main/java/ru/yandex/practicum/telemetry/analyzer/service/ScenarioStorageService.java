@@ -210,6 +210,11 @@ public class ScenarioStorageService {
                 .build();
     }
 
+    @Transactional(readOnly = true)
+    public boolean deviceExists(String hubId, String deviceId) {
+        return sensorRepository.findByIdAndHubId(deviceId, hubId).isPresent();
+    }
+
     private ConditionType convertConditionType(ConditionTypeAvro avroType) {
         return ConditionType.valueOf(avroType.name());
     }

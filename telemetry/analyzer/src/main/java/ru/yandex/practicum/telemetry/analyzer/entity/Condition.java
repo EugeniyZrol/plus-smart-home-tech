@@ -2,8 +2,8 @@ package ru.yandex.practicum.telemetry.analyzer.entity;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import ru.yandex.practicum.telemetry.collector.event.enums.ConditionOperation;
 import ru.yandex.practicum.telemetry.collector.event.enums.ConditionType;
+import ru.yandex.practicum.telemetry.collector.event.enums.ConditionOperation;
 
 import jakarta.persistence.*;
 
