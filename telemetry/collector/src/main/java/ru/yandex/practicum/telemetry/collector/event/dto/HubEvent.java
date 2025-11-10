@@ -22,7 +22,7 @@ public abstract class HubEvent {
     @NotBlank(message = "ID хаба не может быть пустым")
     private String hubId;
 
-    private Instant timestamp = Instant.now();
+    private Instant timestamp;
 
     public abstract HubEventType getType();
 }
