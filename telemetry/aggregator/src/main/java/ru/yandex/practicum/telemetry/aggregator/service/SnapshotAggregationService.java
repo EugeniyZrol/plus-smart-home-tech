@@ -20,11 +20,16 @@ public class SnapshotAggregationService {
         String hubId = event.getHubId();
         String sensorId = event.getId();
 
+        log.debug("Обновление состояния для хаба: {}, датчик: {}", hubId, sensorId);
+
         SensorsSnapshotAvro currentSnapshot = snapshots.get(hubId);
         Map<String, SensorStateAvro> newSensorsState = new HashMap<>();
 
         if (currentSnapshot != null) {
             newSensorsState.putAll(currentSnapshot.getSensorsState());
+            log.debug("Текущий снапшот для хаба {} содержит {} датчиков", hubId, newSensorsState.size());
+        } else {
+            log.info("Создание нового снапшота для хаба: {}", hubId);
         }
 
         SensorStateAvro oldState = newSensorsState.get(sensorId);
@@ -32,16 +37,22 @@ public class SnapshotAggregationService {
 
         if (oldState != null) {
             if (oldState.getTimestamp() > event.getTimestamp()) {
-                log.debug("Событие устарело для датчика {}", sensorId);
+                log.debug("Событие устарело для датчика {}: текущий timestamp={}, новый timestamp={}",
+                        sensorId, oldState.getTimestamp(), event.getTimestamp());
                 needsUpdate = false;
             }
-            else if (isDataEqual(oldState.getData(), event.getPayload())) {
+            else if (isDataEqualImproved(oldState.getData(), event.getPayload())) {
                 log.debug("Данные не изменились для датчика {}", sensorId);
                 needsUpdate = false;
+            } else {
+                log.debug("Данные изменились для датчика {}", sensorId);
             }
+        } else {
+            log.debug("Новый датчик {} для хаба {}", sensorId, hubId);
         }
 
         if (!needsUpdate) {
+            log.debug("Обновление не требуется для датчика {}", sensorId);
             return Optional.empty();
         }
 
@@ -65,14 +76,15 @@ public class SnapshotAggregationService {
 
         snapshots.put(hubId, updatedSnapshot);
 
-        log.info("Снапшот обновлен для hub: {}, sensor: {}, количество датчиков: {}",
-                hubId, sensorId, newSensorsState.size());
+        log.info("Снапшот обновлен для hub: {}, sensor: {}, количество датчиков: {}, timestamp: {}",
+                hubId, sensorId, newSensorsState.size(), snapshotTimestamp);
         return Optional.of(updatedSnapshot);
     }
 
-    private boolean isDataEqual(Object oldData, Object newData) {
+    private boolean isDataEqualImproved(Object oldData, Object newData) {
         if (oldData == null && newData == null) return true;
         if (oldData == null || newData == null) return false;
-        return oldData.equals(newData);
+
+        return oldData.toString().equals(newData.toString());
     }
 }
