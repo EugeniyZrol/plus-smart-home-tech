@@ -1,7 +1,6 @@
 package ru.yandex.practicum.telemetry.analyzer.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -12,14 +11,11 @@ import java.util.List;
 @Repository
 public interface ScenarioActionRepository extends JpaRepository<ScenarioAction, ScenarioActionId> {
 
-    @Query("SELECT sa FROM ScenarioAction sa WHERE sa.scenario.id = :scenarioId")
-    List<ScenarioAction> findByScenarioId(@Param("scenarioId") Long scenarioId);
+    List<ScenarioAction> findByScenarioId(Long scenarioId);
 
-    @Modifying
-    @Query("DELETE FROM ScenarioAction sa WHERE sa.scenario.id = :scenarioId")
-    void deleteByScenarioId(@Param("scenarioId") Long scenarioId);
+    @Query("SELECT sa FROM ScenarioAction sa JOIN FETCH sa.action WHERE sa.scenarioId = :scenarioId")
+    List<ScenarioAction> findByScenarioIdWithAction(@Param("scenarioId") Long scenarioId);
 
-    @Modifying
-    @Query("DELETE FROM ScenarioAction sa WHERE sa.sensor.id = :sensorId")
-    void deleteBySensorId(@Param("sensorId") String sensorId);
+    void deleteByScenarioId(Long scenarioId);
+    void deleteBySensorId(String sensorId);
 }
