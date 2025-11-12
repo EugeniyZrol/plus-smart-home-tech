@@ -17,17 +17,11 @@ public class AggregatorService {
     private final SnapshotProducerService producerService;
 
     public void processSensorEvent(SensorEventAvro event) {
-        log.info("Обработка события датчика: hub={}, sensor={}, timestamp={}",
-                event.getHubId(), event.getId(), event.getTimestamp());
-
         try {
             Optional<SensorsSnapshotAvro> updatedSnapshot = aggregationService.updateState(event);
 
             if (updatedSnapshot.isPresent()) {
-                log.info("Отправка обновленного снапшота для hub: {}", event.getHubId());
                 producerService.sendSnapshot(updatedSnapshot.get());
-            } else {
-                log.info("Обновление не требуется для hub: {}, sensor: {}", event.getHubId(), event.getId());
             }
         } catch (Exception e) {
             log.error("Ошибка обработки события датчика для hub: {}, sensor: {}",

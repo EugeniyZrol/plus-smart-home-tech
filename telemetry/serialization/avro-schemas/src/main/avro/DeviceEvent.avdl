@@ -1,0 +1,33 @@
+@namespace("ru.yandex.practicum.kafka.telemetry.event")
+protocol DeviceEvent {
+
+    enum DeviceTypeAvro {
+        MOTION_SENSOR,
+        TEMPERATURE_SENSOR,
+        LIGHT_SENSOR,
+        CLIMATE_SENSOR,
+        SWITCH_SENSOR
+    }
+
+    record DeviceAddedEventAvro {
+        string id;
+        DeviceTypeAvro type;
+    }
+
+    record DeviceRemovedEventAvro {
+        string id;
+    }
+
+    enum ActionTypeAvro {
+        ACTIVATE,
+        DEACTIVATE,
+        INVERSE,
+        SET_VALUE
+    }
+
+    record DeviceActionAvro {
+        string sensorId;
+        ActionTypeAvro type;
+        union { null, int } value = null;
+    }
+}

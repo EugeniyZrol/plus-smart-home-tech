@@ -7,6 +7,7 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.errors.WakeupException;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.kafka.telemetry.event.*;
+import ru.yandex.practicum.telemetry.analyzer.config.KafkaProperties;
 import ru.yandex.practicum.telemetry.analyzer.service.ScenarioStorageService;
 
 import java.time.Duration;
@@ -19,34 +20,26 @@ public class HubEventProcessor implements Runnable {
 
     private final KafkaConsumer<String, HubEventAvro> hubEventConsumer;
     private final ScenarioStorageService scenarioStorageService;
+    private final KafkaProperties kafkaProperties;
 
     @Override
     public void run() {
         Thread currentThread = Thread.currentThread();
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            log.info("Запущен graceful shutdown HubEventProcessor...");
+            log.info("Запущен graceful shutdown...");
             hubEventConsumer.wakeup();
-            try {
-                currentThread.join();
-            } catch (InterruptedException e) {
-                log.error("Ошибка во время shutdown", e);
-            }
         }));
 
         try {
-            String hubEventsTopic = "telemetry.hubs.v1";
-            hubEventConsumer.subscribe(Collections.singletonList(hubEventsTopic));
-            log.info("HubEventProcessor запущен. Подписан на топик: {}", hubEventsTopic);
+            hubEventConsumer.subscribe(Collections.singletonList(kafkaProperties.getHubsTopic()));
 
             while (true) {
                 ConsumerRecords<String, HubEventAvro> records =
-                        hubEventConsumer.poll(Duration.ofMillis(100));
+                        hubEventConsumer.poll(Duration.ofMillis(kafkaProperties.getPollTimeoutMs()));
 
                 if (records.isEmpty()) {
                     continue;
                 }
-
-                log.debug("Получено {} событий хаба", records.count());
 
                 records.forEach(record -> {
                     HubEventAvro hubEvent = record.value();
@@ -56,14 +49,12 @@ public class HubEventProcessor implements Runnable {
                         log.error("Ошибка обработки события хаба: {}", hubEvent.getHubId(), e);
                     }
                 });
-
-                hubEventConsumer.commitSync();
             }
 
-        } catch (WakeupException ignored) {
-            log.info("WakeupException, завершение работы HubEventProcessor...");
+        } catch (WakeupException e) {
+            log.info("Shutdown завершен");
         } catch (Exception e) {
-            log.error("Ошибка во время обработки событий хаба", e);
+            log.error("Ошибка обработки событий хаба", e);
         } finally {
             cleanup();
         }
@@ -72,44 +63,35 @@ public class HubEventProcessor implements Runnable {
     private void processHubEvent(HubEventAvro hubEvent) {
         String hubId = hubEvent.getHubId();
 
-        log.debug("Обработка события хаба: {}, тип payload: {}",
-                hubId, hubEvent.getPayload().getClass().getSimpleName());
-
-        try {
-            switch (hubEvent.getPayload()) {
-                case DeviceAddedEventAvro deviceAddedEventAvro -> {
-                    scenarioStorageService.addDevice(hubId, deviceAddedEventAvro);
-                    log.info("Добавлено устройство для хаба: {}", hubId);
-                }
-                case DeviceRemovedEventAvro deviceRemovedEventAvro -> {
-                    scenarioStorageService.removeDevice(hubId, deviceRemovedEventAvro);
-                    log.info("Удалено устройство для хаба: {}", hubId);
-                }
-                case ScenarioAddedEventAvro scenarioAddedEventAvro -> {
-                    scenarioStorageService.addScenario(hubId, scenarioAddedEventAvro);
-                    log.info("Добавлен сценарий для хаба: {}", hubId);
-                }
-                case ScenarioRemovedEventAvro scenarioRemovedEventAvro -> {
-                    scenarioStorageService.removeScenario(hubId, scenarioRemovedEventAvro);
-                    log.info("Удален сценарий для хаба: {}", hubId);
-                }
-                case null, default -> log.warn("Неизвестный тип события хаба: {}",
-                        hubEvent.getPayload().getClass().getSimpleName());
+        switch (hubEvent.getPayload()) {
+            case DeviceAddedEventAvro deviceAddedEvent -> {
+                scenarioStorageService.addDevice(hubId, deviceAddedEvent);
+                log.debug("Устройство добавлено для хаба: {}", hubId);
             }
-        } catch (Exception e) {
-            log.error("Ошибка обработки события хаба {}: {}", hubId, e.getMessage(), e);
+            case DeviceRemovedEventAvro deviceRemovedEvent -> {
+                scenarioStorageService.removeDevice(hubId, deviceRemovedEvent);
+                log.debug("Устройство удалено для хаба: {}", hubId);
+            }
+            case ScenarioAddedEventAvro scenarioAddedEvent -> {
+                scenarioStorageService.addScenario(hubId, scenarioAddedEvent);
+                log.debug("Сценарий добавлен для хаба: {}", hubId);
+            }
+            case ScenarioRemovedEventAvro scenarioRemovedEvent -> {
+                scenarioStorageService.removeScenario(hubId, scenarioRemovedEvent);
+                log.debug("Сценарий удален для хаба: {}", hubId);
+            }
+            default -> log.warn("Неизвестный тип события хаба: {}",
+                    hubEvent.getPayload().getClass().getSimpleName());
         }
     }
 
     private void cleanup() {
         try {
-            log.info("Фиксация оффсетов HubEventProcessor...");
             if (hubEventConsumer != null) {
-                hubEventConsumer.commitSync();
                 hubEventConsumer.close();
             }
         } catch (Exception e) {
-            log.error("Ошибка во время cleanup HubEventProcessor", e);
+            log.error("Ошибка при cleanup", e);
         }
     }
 }
