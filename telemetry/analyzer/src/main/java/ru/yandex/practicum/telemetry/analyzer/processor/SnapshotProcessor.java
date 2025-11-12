@@ -7,6 +7,7 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.errors.WakeupException;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.kafka.telemetry.event.SensorsSnapshotAvro;
+import ru.yandex.practicum.telemetry.analyzer.config.KafkaProperties;
 import ru.yandex.practicum.telemetry.analyzer.service.ScenarioExecutionService;
 
 import java.time.Duration;
@@ -15,37 +16,30 @@ import java.util.Collections;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class SnapshotProcessor {
+public class SnapshotProcessor implements Runnable {
 
     private final KafkaConsumer<String, SensorsSnapshotAvro> snapshotConsumer;
     private final ScenarioExecutionService scenarioExecutionService;
+    private final KafkaProperties kafkaProperties;
 
-    public void start() {
-        Thread mainThread = Thread.currentThread();
+    @Override
+    public void run() {
+        Thread currentThread = Thread.currentThread();
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            log.info("Запущен graceful shutdown SnapshotProcessor...");
+            log.info("Запущен graceful shutdown...");
             snapshotConsumer.wakeup();
-            try {
-                mainThread.join();
-            } catch (InterruptedException e) {
-                log.error("Ошибка во время shutdown", e);
-            }
         }));
 
         try {
-            String snapshotsTopic = "telemetry.snapshots.v1";
-            snapshotConsumer.subscribe(Collections.singletonList(snapshotsTopic));
-            log.info("SnapshotProcessor запущен. Подписан на топик: {}", snapshotsTopic);
+            snapshotConsumer.subscribe(Collections.singletonList(kafkaProperties.getSnapshotsTopic()));
 
             while (true) {
                 ConsumerRecords<String, SensorsSnapshotAvro> records =
-                        snapshotConsumer.poll(Duration.ofMillis(100));
+                        snapshotConsumer.poll(Duration.ofMillis(kafkaProperties.getPollTimeoutMs()));
 
                 if (records.isEmpty()) {
                     continue;
                 }
-
-                log.debug("Получено {} снапшотов", records.count());
 
                 records.forEach(record -> {
                     SensorsSnapshotAvro snapshot = record.value();
@@ -55,14 +49,12 @@ public class SnapshotProcessor {
                         log.error("Ошибка выполнения сценариев для хаба: {}", snapshot.getHubId(), e);
                     }
                 });
-
-                snapshotConsumer.commitSync();
             }
 
-        } catch (WakeupException ignored) {
-            log.info("WakeupException, завершение работы SnapshotProcessor...");
+        } catch (WakeupException e) {
+            log.info("Shutdown завершен");
         } catch (Exception e) {
-            log.error("Ошибка во время обработки снапшотов", e);
+            log.error("Ошибка обработки снапшотов", e);
         } finally {
             cleanup();
         }
@@ -70,13 +62,11 @@ public class SnapshotProcessor {
 
     private void cleanup() {
         try {
-            log.info("Фиксация оффсетов SnapshotProcessor...");
             if (snapshotConsumer != null) {
-                snapshotConsumer.commitSync();
                 snapshotConsumer.close();
             }
         } catch (Exception e) {
-            log.error("Ошибка во время cleanup SnapshotProcessor", e);
+            log.error("Ошибка при cleanup", e);
         }
     }
 }

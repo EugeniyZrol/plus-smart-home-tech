@@ -1,0 +1,25 @@
+@namespace("ru.yandex.practicum.kafka.telemetry.event")
+protocol Condition {
+
+    enum ConditionOperationAvro {
+        EQUALS,
+        GREATER_THAN,
+        LOWER_THAN
+    }
+
+    enum ConditionTypeAvro {
+        MOTION,
+        LUMINOSITY,
+        SWITCH,
+        TEMPERATURE,
+        CO2LEVEL,
+        HUMIDITY
+    }
+
+    record ScenarioConditionAvro {
+        string sensorId;
+        ConditionTypeAvro type;
+        ConditionOperationAvro operation;
+        union { null, int } value = null;
+    }
+}

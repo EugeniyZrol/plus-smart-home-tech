@@ -5,11 +5,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.yandex.practicum.kafka.telemetry.event.*;
-
+import ru.yandex.practicum.telemetry.analyzer.config.ScenarioProperties;
 import ru.yandex.practicum.telemetry.analyzer.entity.*;
+import ru.yandex.practicum.telemetry.analyzer.entity.Condition;
 import ru.yandex.practicum.telemetry.analyzer.repository.*;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -24,6 +24,7 @@ public class ScenarioStorageService {
     private final ActionRepository actionRepository;
     private final ScenarioConditionRepository scenarioConditionRepository;
     private final ScenarioActionRepository scenarioActionRepository;
+    private final ScenarioProperties scenarioProperties;
 
     @Transactional
     public void addDevice(String hubId, DeviceAddedEventAvro device) {
@@ -32,11 +33,11 @@ public class ScenarioStorageService {
             Sensor sensor = existingSensor.get();
             sensor.setHubId(hubId);
             sensorRepository.save(sensor);
-            log.info("Обновлено устройство '{}' для хаба: {}", device.getId(), hubId);
+            log.debug("Device updated: '{}' for hub: {}", device.getId(), hubId);
         } else {
             Sensor sensor = new Sensor(device.getId(), hubId);
             sensorRepository.save(sensor);
-            log.info("Добавлено устройство '{}' для хаба: {}", device.getId(), hubId);
+            log.debug("Device added: '{}' for hub: {}", device.getId(), hubId);
         }
     }
 
@@ -46,29 +47,29 @@ public class ScenarioStorageService {
         if (sensor.isPresent()) {
             scenarioConditionRepository.deleteBySensorId(device.getId());
             scenarioActionRepository.deleteBySensorId(device.getId());
-
             sensorRepository.delete(sensor.get());
-            log.info("Удалено устройство '{}' для хаба: {}", device.getId(), hubId);
-        } else {
-            log.warn("Устройство '{}' не найдено для хаба: {}", device.getId(), hubId);
+            log.debug("Device removed: '{}' for hub: {}", device.getId(), hubId);
         }
     }
 
     @Transactional
     public void addScenario(String hubId, ScenarioAddedEventAvro scenarioAvro) {
+        if (scenarioProperties.getSpecialScenarios().contains(scenarioAvro.getName())) {
+            log.info("Adding special scenario: {}", scenarioAvro.getName());
+        }
+
         Optional<Scenario> existingScenario = scenarioRepository.findByHubIdAndName(hubId, scenarioAvro.getName());
         if (existingScenario.isPresent()) {
             updateScenario(existingScenario.get(), scenarioAvro);
         } else {
             createNewScenario(hubId, scenarioAvro);
         }
-        log.info("Сценарий '{}' сохранен для хаба: {}", scenarioAvro.getName(), hubId);
+        log.debug("Scenario saved: '{}' for hub: {}", scenarioAvro.getName(), hubId);
     }
 
     private void createNewScenario(String hubId, ScenarioAddedEventAvro scenarioAvro) {
         Scenario scenario = new Scenario(hubId, scenarioAvro.getName());
         scenario = scenarioRepository.save(scenario);
-
         saveScenarioConditions(scenario, scenarioAvro.getConditions());
         saveScenarioActions(scenario, scenarioAvro.getActions());
     }
@@ -76,7 +77,6 @@ public class ScenarioStorageService {
     private void updateScenario(Scenario scenario, ScenarioAddedEventAvro scenarioAvro) {
         scenarioConditionRepository.deleteByScenarioId(scenario.getId());
         scenarioActionRepository.deleteByScenarioId(scenario.getId());
-
         saveScenarioConditions(scenario, scenarioAvro.getConditions());
         saveScenarioActions(scenario, scenarioAvro.getActions());
     }
@@ -87,17 +87,12 @@ public class ScenarioStorageService {
                     conditionAvro.getSensorId(), scenario.getHubId());
 
             if (sensor.isEmpty()) {
-                log.warn("Сенсор {} не найден для хаба {}, пропускаем условие",
-                        conditionAvro.getSensorId(), scenario.getHubId());
                 continue;
             }
 
-            ConditionTypeAvro type = conditionAvro.getType();
-            ConditionOperationAvro operation = conditionAvro.getOperation();
-
             Condition condition = new Condition(
-                    type,
-                    operation,
+                    conditionAvro.getType(),
+                    conditionAvro.getOperation(),
                     conditionAvro.getValue()
             );
             condition = conditionRepository.save(condition);
@@ -117,15 +112,11 @@ public class ScenarioStorageService {
                     actionAvro.getSensorId(), scenario.getHubId());
 
             if (sensor.isEmpty()) {
-                log.warn("Сенсор {} не найден для хаба {}, пропускаем действие",
-                        actionAvro.getSensorId(), scenario.getHubId());
                 continue;
             }
 
-            ActionTypeAvro type = actionAvro.getType();
-
             Action action = new Action(
-                    type,
+                    actionAvro.getType(),
                     actionAvro.getValue()
             );
             action = actionRepository.save(action);
@@ -145,66 +136,8 @@ public class ScenarioStorageService {
         if (existingScenario.isPresent()) {
             scenarioConditionRepository.deleteByScenarioId(existingScenario.get().getId());
             scenarioActionRepository.deleteByScenarioId(existingScenario.get().getId());
-
             scenarioRepository.delete(existingScenario.get());
-            log.info("Удален сценарий '{}' для хаба: {}", scenario.getName(), hubId);
-        } else {
-            log.warn("Сценарий '{}' не найден для хаба: {}", scenario.getName(), hubId);
+            log.debug("Scenario removed: '{}' for hub: {}", scenario.getName(), hubId);
         }
-    }
-
-    @Transactional(readOnly = true)
-    public List<ScenarioAddedEventAvro> getScenariosForHub(String hubId) {
-        List<Scenario> scenarios = scenarioRepository.findByHubId(hubId);
-        List<ScenarioAddedEventAvro> result = new ArrayList<>();
-
-        for (Scenario scenario : scenarios) {
-            List<ScenarioCondition> conditions = scenarioConditionRepository.findByScenarioId(scenario.getId());
-            List<ScenarioAction> actions = scenarioActionRepository.findByScenarioId(scenario.getId());
-
-            result.add(convertToAvro(scenario, conditions, actions));
-        }
-
-        return result;
-    }
-
-    private ScenarioAddedEventAvro convertToAvro(Scenario scenario, List<ScenarioCondition> conditions, List<ScenarioAction> actions) {
-        List<ScenarioConditionAvro> conditionsAvro = new ArrayList<>();
-        for (ScenarioCondition sc : conditions) {
-            Condition condition = sc.getCondition();
-            Sensor sensor = sc.getSensor();
-
-            ScenarioConditionAvro conditionAvro = ScenarioConditionAvro.newBuilder()
-                    .setSensorId(sensor.getId())
-                    .setType(condition.getType())
-                    .setOperation(condition.getOperation())
-                    .setValue(condition.getValue())
-                    .build();
-            conditionsAvro.add(conditionAvro);
-        }
-
-        List<DeviceActionAvro> actionsAvro = new ArrayList<>();
-        for (ScenarioAction sa : actions) {
-            Action action = sa.getAction();
-            Sensor sensor = sa.getSensor();
-
-            DeviceActionAvro actionAvro = DeviceActionAvro.newBuilder()
-                    .setSensorId(sensor.getId())
-                    .setType(action.getType())
-                    .setValue(action.getValue())
-                    .build();
-            actionsAvro.add(actionAvro);
-        }
-
-        return ScenarioAddedEventAvro.newBuilder()
-                .setName(scenario.getName())
-                .setConditions(conditionsAvro)
-                .setActions(actionsAvro)
-                .build();
-    }
-
-    @Transactional(readOnly = true)
-    public boolean deviceExists(String hubId, String deviceId) {
-        return sensorRepository.findByIdAndHubId(deviceId, hubId).isPresent();
     }
 }

@@ -30,6 +30,8 @@ public class Analyzer {
         sensorEventsThread.setName("SensorEventHandlerThread");
         sensorEventsThread.start();
 
-        snapshotProcessor.start();
+        Thread snapshotThread = new Thread(snapshotProcessor);
+        snapshotThread.setName("SnapshotProcessorThread");
+        snapshotThread.start();
     }
 }

@@ -1,0 +1,16 @@
+@namespace("ru.yandex.practicum.kafka.telemetry.event")
+protocol ScenarioEvent {
+
+    import idl "Condition.avdl";
+    import idl "DeviceEvent.avdl";
+
+    record ScenarioAddedEventAvro {
+        string name;
+        array<ScenarioConditionAvro> conditions;
+        array<DeviceActionAvro> actions;
+    }
+
+    record ScenarioRemovedEventAvro {
+        string name;
+    }
+}

@@ -1,11 +1,8 @@
 package ru.yandex.practicum.telemetry.analyzer.service;
 
-import com.google.protobuf.Empty;
 import com.google.protobuf.Timestamp;
-import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.client.inject.GrpcClient;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.grpc.telemetry.event.ActionTypeProto;
@@ -14,10 +11,13 @@ import ru.yandex.practicum.grpc.telemetry.event.DeviceActionRequestProto;
 import ru.yandex.practicum.grpc.telemetry.hubrouter.HubRouterControllerGrpc;
 import ru.yandex.practicum.kafka.telemetry.event.ActionTypeAvro;
 import ru.yandex.practicum.kafka.telemetry.event.DeviceActionAvro;
+import ru.yandex.practicum.telemetry.analyzer.config.GrpcProperties;
+import ru.yandex.practicum.telemetry.analyzer.config.ScenarioProperties;
 
 import java.time.Instant;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class GrpcCommandService {
@@ -25,7 +25,15 @@ public class GrpcCommandService {
     @GrpcClient("hub-router")
     private HubRouterControllerGrpc.HubRouterControllerBlockingStub hubRouterClient;
 
+    private final ScenarioProperties scenarioProperties;
+    private final GrpcProperties grpcProperties;
+    private final ExecutorService asyncExecutor = Executors.newCachedThreadPool();
+
     public void sendDeviceAction(String hubId, String scenarioName, DeviceActionAvro actionAvro) {
+        asyncExecutor.submit(() -> sendDeviceActionWithRetry(hubId, scenarioName, actionAvro, 0));
+    }
+
+    private void sendDeviceActionWithRetry(String hubId, String scenarioName, DeviceActionAvro actionAvro, int attempt) {
         try {
             DeviceActionProto actionProto = convertToProto(actionAvro);
 
@@ -42,21 +50,22 @@ public class GrpcCommandService {
                     .setTimestamp(timestamp)
                     .build();
 
-            Empty response = hubRouterClient.handleDeviceAction(request);
-
-            log.info("Команда успешно отправлена для хаба: {}, сценарий: {}, устройство: {}, тип: {}",
-                    hubId, scenarioName, actionAvro.getSensorId(), actionAvro.getType());
+            hubRouterClient.handleDeviceAction(request);
 
         } catch (StatusRuntimeException e) {
-            if (e.getStatus().getCode() == Status.Code.UNAVAILABLE) {
-                log.error("gRPC сервер недоступен для хаба: {}. Проверьте запущен ли hub-router на порту 59090", hubId);
-            } else {
-                log.error("Ошибка отправки команды для хаба: {}, устройство: {}, статус: {}",
-                        hubId, actionAvro.getSensorId(), e.getStatus(), e);
+            if (grpcProperties.getRetryStatusCodes().contains(e.getStatus().getCode().name())) {
+                if (attempt < scenarioProperties.getMaxRetryAttempts()) {
+                    try {
+                        Thread.sleep(grpcProperties.getRetryDelayMs() * (attempt + 1));
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        return;
+                    }
+                    sendDeviceActionWithRetry(hubId, scenarioName, actionAvro, attempt + 1);
+                }
             }
         } catch (Exception e) {
-            log.error("Неожиданная ошибка при отправке команды для хаба: {}, устройство: {}",
-                    hubId, actionAvro.getSensorId(), e);
+            Thread.currentThread().interrupt();
         }
     }
 
