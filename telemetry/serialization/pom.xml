@@ -16,6 +16,6 @@
     <modules>
         <module>avro-schemas</module>
         <module>proto-schemas</module>
+        <module>serdes</module>
     </modules>
-
 </project>

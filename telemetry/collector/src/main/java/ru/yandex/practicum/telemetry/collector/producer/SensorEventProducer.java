@@ -5,16 +5,18 @@ import ru.yandex.practicum.telemetry.collector.converter.SensorEventToAvroConver
 import ru.yandex.practicum.telemetry.collector.event.dto.SensorEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
-import ru.yandex.practicum.telemetry.collector.serdes.SensorEventAvroSerializer;
+import ru.yandex.practicum.telemetry.serdes.serializer.SensorEventAvroSerializer;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class SensorEventProducer {
 
-    private static final String TOPIC = "telemetry.sensors.v1";
+    @Value("${kafka.topic.telemetry.sensors:telemetry.sensors.v1}")
+    private String topic;
 
     private final KafkaTemplate<String, Object> kafkaTemplate;
     private final SensorEventToAvroConverter converter;
@@ -23,14 +25,14 @@ public class SensorEventProducer {
     public void sendSensorEvent(SensorEvent event) {
         try {
             SensorEventAvro avroEvent = converter.convert(event);
-            byte[] serializedData = serializer.serialize(TOPIC, avroEvent);
+            byte[] serializedData = serializer.serialize(topic, avroEvent);
 
-            kafkaTemplate.send(TOPIC, event.getId(), serializedData)
+            kafkaTemplate.send(topic, event.getId(), serializedData)
                     .whenComplete((result, ex) -> {
                         if (ex == null) {
-                            log.info("Сенсорное событие успешно отправлено: {} в тему: {}", event.getId(), TOPIC);
+                            log.info("Сенсорное событие успешно отправлено: {} в тему: {}", event.getId(), topic);
                         } else {
-                            log.error("Ошибка отправки сенсорного события: {} в тему: {}", event.getId(), TOPIC, ex);
+                            log.error("Ошибка отправки сенсорного события: {} в тему: {}", event.getId(), topic, ex);
                         }
                     });
         } catch (Exception e) {

@@ -23,16 +23,20 @@
             <plugin>
                 <groupId>org.apache.avro</groupId>
                 <artifactId>avro-maven-plugin</artifactId>
-                <version>1.11.0</version>
+                <version>${avro.version}</version>
                 <configuration>
                     <stringType>String</stringType>
+                    <createSetters>false</createSetters>
                     <enableDecimalLogicalType>true</enableDecimalLogicalType>
-                    <sourceDirectory>${project.basedir}/src/main/avro</sourceDirectory>
+                    <fieldVisibility>private</fieldVisibility>
+                    <sourceDirectory>${project.basedir}/src/main/avro/</sourceDirectory>
+                    <outputDirectory>${project.basedir}/src/main/java/</outputDirectory>
                 </configuration>
                 <executions>
                     <execution>
                         <phase>generate-sources</phase>
                         <goals>
+                            <goal>schema</goal>
                             <goal>idl-protocol</goal>
                         </goals>
                     </execution>
