@@ -1,0 +1,30 @@
+spring:
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      acks: all
+      retries: 3
+      batch-size: 16384
+      linger:
+        ms: 1
+      buffer-memory: 33554432
+
+server:
+  port: 8080
+
+grpc:
+  server:
+    port: 59091
+
+kafka:
+  topic:
+    telemetry:
+      hubs: telemetry.hubs.v1
+      sensors: telemetry.sensors.v1
+
+logging:
+  level:
+    ru.yandex.practicum: DEBUG
+    org.apache.kafka: WARN
+    net:
+      devh: INFO
