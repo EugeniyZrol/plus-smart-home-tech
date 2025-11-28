@@ -17,10 +17,19 @@ spring:
         linger.ms: 10
         buffer.memory: 33554432
 
-kafka:
-  topics:
-    sensor-events: telemetry.sensors.v1
-    snapshots: telemetry.snapshots.v1
+aggregator:
+  kafka:
+    producer:
+      topic: telemetry.snapshots.v1
+      properties:
+        compression.type: snappy
+    consumer:
+      topic: telemetry.sensors.v1
+      poll-timeout: 100ms
+      properties:
+        max.poll.records: 500
+        session.timeout.ms: 30000
+        max.poll.interval.ms: 300000
 
 server:
   port: 8082
