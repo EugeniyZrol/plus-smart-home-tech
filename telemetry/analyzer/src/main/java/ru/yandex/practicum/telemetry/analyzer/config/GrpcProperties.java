@@ -9,7 +9,6 @@ import java.util.List;
 @Component
 @ConfigurationProperties(prefix = "app.grpc")
 public class GrpcProperties {
-
-    private List<String> retryStatusCodes = List.of("UNAVAILABLE", "DEADLINE_EXCEEDED");
-    private int retryDelayMs = 100;
+    private List<String> retryStatusCodes;
+    private int retryDelayMs;
 }

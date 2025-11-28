@@ -7,10 +7,9 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.errors.WakeupException;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.kafka.telemetry.event.*;
-import ru.yandex.practicum.telemetry.analyzer.config.KafkaProperties;
+import ru.yandex.practicum.telemetry.analyzer.config.KafkaConfigProperties;
 import ru.yandex.practicum.telemetry.analyzer.service.ScenarioStorageService;
 
-import java.time.Duration;
 import java.util.Collections;
 
 @Slf4j
@@ -20,22 +19,26 @@ public class HubEventProcessor implements Runnable {
 
     private final KafkaConsumer<String, HubEventAvro> hubEventConsumer;
     private final ScenarioStorageService scenarioStorageService;
-    private final KafkaProperties kafkaProperties;
+    private final KafkaConfigProperties kafkaConfigProperties;
 
     @Override
     public void run() {
         Thread currentThread = Thread.currentThread();
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            log.info("Запущен graceful shutdown...");
+            log.info("Запущен graceful shutdown HubEventProcessor...");
             hubEventConsumer.wakeup();
         }));
 
         try {
-            hubEventConsumer.subscribe(Collections.singletonList(kafkaProperties.getHubsTopic()));
+            hubEventConsumer.subscribe(Collections.singletonList(
+                    kafkaConfigProperties.getConsumer().getHubEventsTopic()
+            ));
+            log.info("HubEventProcessor запущен. Подписан на топик: {}",
+                    kafkaConfigProperties.getConsumer().getHubEventsTopic());
 
             while (true) {
                 ConsumerRecords<String, HubEventAvro> records =
-                        hubEventConsumer.poll(Duration.ofMillis(kafkaProperties.getPollTimeoutMs()));
+                        hubEventConsumer.poll(kafkaConfigProperties.getConsumer().getPollTimeout());
 
                 if (records.isEmpty()) {
                     continue;
@@ -52,7 +55,7 @@ public class HubEventProcessor implements Runnable {
             }
 
         } catch (WakeupException e) {
-            log.info("Shutdown завершен");
+            log.info("HubEventProcessor shutdown завершен");
         } catch (Exception e) {
             log.error("Ошибка обработки событий хаба", e);
         } finally {
@@ -91,7 +94,7 @@ public class HubEventProcessor implements Runnable {
                 hubEventConsumer.close();
             }
         } catch (Exception e) {
-            log.error("Ошибка при cleanup", e);
+            log.error("Ошибка при cleanup HubEventProcessor", e);
         }
     }
 }

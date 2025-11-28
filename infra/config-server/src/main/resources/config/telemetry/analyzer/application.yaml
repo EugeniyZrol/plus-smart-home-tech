@@ -5,6 +5,22 @@ spring:
     web-application-type: none
   kafka:
     bootstrap-servers: localhost:9092
+    consumer:
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.ByteArrayDeserializer
+      auto-offset-reset: latest
+      enable-auto-commit: false
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.ByteArraySerializer
+      acks: all
+      retries: 3
+      batch-size: 16384
+      properties:
+        linger.ms: 0
+        buffer.memory: 33554432
+        request.timeout.ms: 30000
+        delivery.timeout.ms: 120000
   datasource:
     url: jdbc:postgresql://localhost:5432/telemetry
     username: postgres
@@ -24,40 +40,38 @@ grpc:
       enable-keep-alive: true
       keep-alive-without-calls: true
 
-logging:
-  level:
-    ru.yandex.practicum.telemetry.analyzer: INFO
+aggregator:
+  kafka:
+    producer:
+      topic: telemetry.commands.v1
+      properties:
+        compression.type: snappy
+    consumer:
+      snapshots-topic: telemetry.snapshots.v1
+      hub-events-topic: telemetry.hubs.v1
+      sensor-events-topic: telemetry.sensors.v1
+      snapshots-group-id: analyzer-snapshots-group
+      hub-events-group-id: analyzer-hubevents-group
+      sensor-events-group-id: analyzer-sensorevents-group
+      poll-timeout: 100ms
+      properties:
+        session.timeout.ms: 30000
+        max.poll.interval.ms: 300000
+        max.poll.records: 500
+        heartbeat.interval.ms: 3000
 
 app:
-  kafka:
-    snapshots-group-id: analyzer-snapshots-group
-    hub-events-group-id: analyzer-hubevents-group
-    sensor-events-group-id: analyzer-sensorevents-group
-    hubs-topic: telemetry.hubs.v1
-    sensors-topic: telemetry.sensors.v1
-    snapshots-topic: telemetry.snapshots.v1
-    auto-offset-reset: latest
-    enable-auto-commit: false
-    poll-timeout-ms: 100
-    session-timeout-ms: 30000
-    max-poll-interval-ms: 300000
-    max-poll-records: 500
-    acks: all
-    retries: 3
-    linger-ms: 0
-    batch-size: 16384
-    buffer-memory: 33554432
-    request-timeout-ms: 30000
-    delivery-timeout-ms: 120000
-
   scenarios:
-    turn-off-all-lights-name: "Выключить все лампы"
-    special-scenarios: "Специальные сценарии"
+    turn-off-all-lights-name: "Выключить весь свет"
+    special-scenarios:
+      - "Выключить весь свет"
     command-delay-ms: 10
     max-retry-attempts: 3
 
   grpc:
-    retry-status-codes: "UNAVAILABLE,DEADLINE_EXCEEDED"
+    retry-status-codes:
+      - "UNAVAILABLE"
+      - "DEADLINE_EXCEEDED"
     retry-delay-ms: 100
 
   sensor-state:
@@ -68,4 +82,11 @@ app:
       cleanup-interval-minutes: 5
 
   conditions:
-    allowed-operations: "EQUALS,GREATER_THAN,LOWER_THAN"
+    allowed-operations:
+      - "EQUALS"
+      - "GREATER_THAN"
+      - "LOWER_THAN"
+
+logging:
+  level:
+    ru.yandex.practicum.telemetry.analyzer: INFO

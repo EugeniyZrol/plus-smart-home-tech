@@ -1,10 +1,12 @@
 package ru.yandex.practicum.telemetry.analyzer.config;
 
 import lombok.RequiredArgsConstructor;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
-import org.springframework.beans.factory.annotation.Value;
+import org.apache.kafka.clients.producer.ProducerConfig;
+import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import ru.yandex.practicum.kafka.telemetry.event.HubEventAvro;
@@ -16,72 +18,87 @@ import ru.yandex.practicum.telemetry.serdes.deserializer.SensorEventDeserializer
 import ru.yandex.practicum.telemetry.serdes.deserializer.SensorsSnapshotDeserializer;
 import ru.yandex.practicum.telemetry.serdes.serializer.DeviceActionSerializer;
 
-import java.util.Properties;
+import java.util.HashMap;
+import java.util.Map;
 
 @Configuration
 @RequiredArgsConstructor
 public class KafkaConfig {
 
-    @Value("${spring.kafka.bootstrap-servers:localhost:9092}")
-    private String bootstrapServers;
-
     private final KafkaProperties kafkaProperties;
+    private final KafkaConfigProperties aggregatorKafkaProperties;
 
     @Bean
     public KafkaConsumer<String, SensorsSnapshotAvro> snapshotConsumer() {
-        Properties props = createConsumerProperties();
-        props.put("group.id", kafkaProperties.getSnapshotsGroupId());
-        props.put("value.deserializer", SensorsSnapshotDeserializer.class.getName());
+        Map<String, Object> props = buildConsumerProperties(aggregatorKafkaProperties.getConsumer().getSnapshotsGroupId());
+        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, SensorsSnapshotDeserializer.class.getName());
         return new KafkaConsumer<>(props);
     }
 
     @Bean
     public KafkaConsumer<String, HubEventAvro> hubEventConsumer() {
-        Properties props = createConsumerProperties();
-        props.put("group.id", kafkaProperties.getHubEventsGroupId());
-        props.put("value.deserializer", HubEventDeserializer.class.getName());
+        Map<String, Object> props = buildConsumerProperties(aggregatorKafkaProperties.getConsumer().getHubEventsGroupId());
+        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, HubEventDeserializer.class.getName());
         return new KafkaConsumer<>(props);
     }
 
     @Bean
     public KafkaConsumer<String, SensorEventAvro> sensorEventConsumer() {
-        Properties props = createConsumerProperties();
-        props.put("group.id", kafkaProperties.getSensorEventsGroupId());
-        props.put("value.deserializer", SensorEventDeserializer.class.getName());
+        Map<String, Object> props = buildConsumerProperties(aggregatorKafkaProperties.getConsumer().getSensorEventsGroupId());
+        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, SensorEventDeserializer.class.getName());
         return new KafkaConsumer<>(props);
     }
 
     @Bean
     public Producer<String, DeviceActionAvro> commandProducer() {
-        Properties props = createProducerProperties();
+        Map<String, Object> props = buildProducerProperties();
         props.put("value.serializer", DeviceActionSerializer.class.getName());
         return new KafkaProducer<>(props);
     }
 
-    private Properties createConsumerProperties() {
-        Properties props = new Properties();
-        props.put("bootstrap.servers", bootstrapServers);
-        props.put("auto.offset.reset", kafkaProperties.getAutoOffsetReset());
-        props.put("enable.auto.commit", kafkaProperties.isEnableAutoCommit());
-        props.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
-        props.put("session.timeout.ms", kafkaProperties.getSessionTimeoutMs());
-        props.put("max.poll.interval.ms", kafkaProperties.getMaxPollIntervalMs());
-        props.put("max.poll.records", kafkaProperties.getMaxPollRecords());
-        props.put("heartbeat.interval.ms", kafkaProperties.getHeartbeatIntervalMs());
+    private Map<String, Object> buildConsumerProperties(String groupId) {
+        Map<String, Object> props = new HashMap<>();
+
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaProperties.getBootstrapServers());
+        props.put(ConsumerConfig.GROUP_ID_CONFIG, groupId);
+        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, kafkaProperties.getConsumer().getAutoOffsetReset());
+        props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, kafkaProperties.getConsumer().getEnableAutoCommit());
+        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, kafkaProperties.getConsumer().getKeyDeserializer());
+
+        if (aggregatorKafkaProperties.getConsumer().getProperties() != null) {
+            props.putAll(aggregatorKafkaProperties.getConsumer().getProperties());
+        }
+
+        if (kafkaProperties.getConsumer().getProperties() != null) {
+            props.putAll(kafkaProperties.getConsumer().getProperties());
+        }
+
         return props;
     }
 
-    private Properties createProducerProperties() {
-        Properties props = new Properties();
-        props.put("bootstrap.servers", bootstrapServers);
-        props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
-        props.put("acks", kafkaProperties.getAcks());
-        props.put("retries", kafkaProperties.getRetries());
-        props.put("linger.ms", kafkaProperties.getLingerMs());
-        props.put("batch.size", kafkaProperties.getBatchSize());
-        props.put("buffer.memory", kafkaProperties.getBufferMemory());
-        props.put("request.timeout.ms", kafkaProperties.getRequestTimeoutMs());
-        props.put("delivery.timeout.ms", kafkaProperties.getDeliveryTimeoutMs());
+    private Map<String, Object> buildProducerProperties() {
+        Map<String, Object> props = new HashMap<>();
+
+        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaProperties.getBootstrapServers());
+        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, kafkaProperties.getProducer().getKeySerializer());
+        props.put(ProducerConfig.ACKS_CONFIG, kafkaProperties.getProducer().getAcks());
+        props.put(ProducerConfig.RETRIES_CONFIG, kafkaProperties.getProducer().getRetries());
+
+        if (kafkaProperties.getProducer().getBatchSize() != null) {
+            props.put(ProducerConfig.BATCH_SIZE_CONFIG, (int) kafkaProperties.getProducer().getBatchSize().toBytes());
+        }
+        if (kafkaProperties.getProducer().getBufferMemory() != null) {
+            props.put(ProducerConfig.BUFFER_MEMORY_CONFIG, kafkaProperties.getProducer().getBufferMemory().toBytes());
+        }
+
+        if (kafkaProperties.getProducer().getProperties() != null) {
+            props.putAll(kafkaProperties.getProducer().getProperties());
+        }
+
+        if (aggregatorKafkaProperties.getProducer().getProperties() != null) {
+            props.putAll(aggregatorKafkaProperties.getProducer().getProperties());
+        }
+
         return props;
     }
 }

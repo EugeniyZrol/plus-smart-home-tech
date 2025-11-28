@@ -9,9 +9,8 @@ import java.util.List;
 @Component
 @ConfigurationProperties(prefix = "app.scenarios")
 public class ScenarioProperties {
-
-    private String turnOffAllLightsName = "Выключить весь свет";
-    private List<String> specialScenarios = List.of("Выключить весь свет");
-    private int commandDelayMs = 10;
-    private int maxRetryAttempts = 3;
+    private String turnOffAllLightsName;
+    private List<String> specialScenarios;
+    private int commandDelayMs;
+    private int maxRetryAttempts;
 }
