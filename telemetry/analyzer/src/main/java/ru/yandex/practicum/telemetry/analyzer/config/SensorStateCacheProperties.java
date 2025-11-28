@@ -8,9 +8,8 @@ import org.springframework.stereotype.Component;
 @Component
 @ConfigurationProperties(prefix = "app.sensor-state.cache")
 public class SensorStateCacheProperties {
-
-    private boolean enabled = true;
-    private long ttlMinutes = 60;
-    private int maxSize = 10000;
-    private long cleanupIntervalMinutes = 5;
+    private boolean enabled;
+    private long ttlMinutes;
+    private int maxSize;
+    private long cleanupIntervalMinutes;
 }

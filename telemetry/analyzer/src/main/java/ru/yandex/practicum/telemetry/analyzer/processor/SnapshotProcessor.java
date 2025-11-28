@@ -7,7 +7,7 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.errors.WakeupException;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.kafka.telemetry.event.SensorsSnapshotAvro;
-import ru.yandex.practicum.telemetry.analyzer.config.KafkaProperties;
+import ru.yandex.practicum.telemetry.analyzer.config.KafkaConfigProperties;
 import ru.yandex.practicum.telemetry.analyzer.service.ScenarioExecutionService;
 
 import java.time.Duration;
@@ -20,22 +20,26 @@ public class SnapshotProcessor implements Runnable {
 
     private final KafkaConsumer<String, SensorsSnapshotAvro> snapshotConsumer;
     private final ScenarioExecutionService scenarioExecutionService;
-    private final KafkaProperties kafkaProperties;
+    private final KafkaConfigProperties kafkaConfigProperties;
 
     @Override
     public void run() {
         Thread currentThread = Thread.currentThread();
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            log.info("Запущен graceful shutdown...");
+            log.info("Запущен graceful shutdown SnapshotProcessor...");
             snapshotConsumer.wakeup();
         }));
 
         try {
-            snapshotConsumer.subscribe(Collections.singletonList(kafkaProperties.getSnapshotsTopic()));
+            snapshotConsumer.subscribe(Collections.singletonList(
+                    kafkaConfigProperties.getConsumer().getSnapshotsTopic()
+            ));
+            log.info("SnapshotProcessor запущен. Подписан на топик: {}",
+                    kafkaConfigProperties.getConsumer().getSnapshotsTopic());
 
             while (true) {
                 ConsumerRecords<String, SensorsSnapshotAvro> records =
-                        snapshotConsumer.poll(Duration.ofMillis(kafkaProperties.getPollTimeoutMs()));
+                        snapshotConsumer.poll(kafkaConfigProperties.getConsumer().getPollTimeout());
 
                 if (records.isEmpty()) {
                     continue;
@@ -52,7 +56,7 @@ public class SnapshotProcessor implements Runnable {
             }
 
         } catch (WakeupException e) {
-            log.info("Shutdown завершен");
+            log.info("SnapshotProcessor shutdown завершен");
         } catch (Exception e) {
             log.error("Ошибка обработки снапшотов", e);
         } finally {
@@ -66,7 +70,7 @@ public class SnapshotProcessor implements Runnable {
                 snapshotConsumer.close();
             }
         } catch (Exception e) {
-            log.error("Ошибка при cleanup", e);
+            log.error("Ошибка при cleanup SnapshotProcessor", e);
         }
     }
 }
