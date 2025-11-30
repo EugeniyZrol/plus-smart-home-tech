@@ -1,0 +1,27 @@
+spring:
+  application:
+    name: warehouse
+  datasource:
+    url: jdbc:h2:file:./data/warehouse;DB_CLOSE_ON_EXIT=FALSE
+    driverClassName: org.h2.Driver
+    username: sa
+    password: password
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        show_sql: true
+        format_sql: true
+  h2:
+    console:
+      enabled: true
+
+server:
+  port: 0
+
+logging:
+  level:
+    ru.yandex.practicum.commerce.warehouse: DEBUG
