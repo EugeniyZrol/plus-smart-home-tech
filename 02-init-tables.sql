@@ -1,3 +1,6 @@
+-- Устанавливаем схему telemetry
+SET search_path TO telemetry;
+
 -- создаём таблицу scenarios
 CREATE TABLE IF NOT EXISTS scenarios (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,

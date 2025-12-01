@@ -7,7 +7,7 @@ spring:
     config:
       discovery:
         enabled: true
-        service-id: config-server
+        service-id: CONFIG-SERVER
       fail-fast: false
 
 eureka:

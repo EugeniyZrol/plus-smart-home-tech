@@ -1,22 +1,31 @@
 spring:
-  application:
-    name: shopping-store
   datasource:
-    url: jdbc:h2:file:./data/shopping-store;DB_CLOSE_ON_EXIT=FALSE
-    driverClassName: org.h2.Driver
-    username: sa
+    url: jdbc:postgresql://localhost:5433/commerce?currentSchema=shopping_store
+    driverClassName: org.postgresql.Driver
+    username: postgres
     password: password
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
   jpa:
-    database-platform: org.hibernate.dialect.H2Dialect
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
       ddl-auto: update
     show-sql: true
-  h2:
-    console:
-      enabled: true
+    properties:
+      hibernate:
+        show_sql: true
+        format_sql: true
+        default_schema: shopping_store
 
 server:
   port: 0
+
+eureka:
+  client:
+    enabled: true
+  instance:
+    prefer-ip-address: true
 
 logging:
   level:
