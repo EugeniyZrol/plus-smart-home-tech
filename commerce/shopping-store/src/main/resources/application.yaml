@@ -5,9 +5,9 @@ spring:
     import: "optional:configserver:"
   cloud:
     config:
+      uri: http://localhost:8888
       discovery:
-        enabled: true
-        service-id: CONFIG-SERVER
+        enabled: false
       fail-fast: false
 
 eureka:
