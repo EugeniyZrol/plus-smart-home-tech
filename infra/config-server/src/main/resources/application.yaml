@@ -10,11 +10,14 @@ spring:
           searchLocations:
             - classpath:config/telemetry/{application}
             - classpath:config/commerce/{application}
+
 server:
   port: 8888
+
 eureka:
   client:
     serviceUrl:
       defaultZone: http://localhost:8761/eureka/
+    enabled: true
   instance:
     prefer-ip-address: true

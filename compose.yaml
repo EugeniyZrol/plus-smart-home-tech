@@ -45,33 +45,6 @@ services:
       - commerce_postgres_data:/var/lib/postgresql/data
       - ./init-commerce-schemas.sql:/docker-entrypoint-initdb.d/init-commerce-schemas.sql
 
-  discovery-server:
-    build:
-      context: ./infra/discovery-server
-      dockerfile: Dockerfile
-    container_name: discovery-server
-    ports:
-      - "8761:8761"
-    environment:
-      - SPRING_PROFILES_ACTIVE=docker
-    depends_on:
-      - commerce-postgres
-
-  config-server:
-    build:
-      context: ./infra/config-server
-      dockerfile: Dockerfile
-    container_name: config-server
-    ports:
-      - "8888:8888"
-    environment:
-      - SPRING_PROFILES_ACTIVE=native,docker
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
-    volumes:
-      - ./infra/config-server/src/main/resources/config:/app/config
-    depends_on:
-      - discovery-server
-
 volumes:
   postgres_data:
   commerce_postgres_data:
