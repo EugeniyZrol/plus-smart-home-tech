@@ -1,3 +1,6 @@
+server:
+  port: 0
+
 spring:
   datasource:
     url: jdbc:postgresql://localhost:5433/commerce?currentSchema=shopping_store
@@ -5,8 +8,10 @@ spring:
     username: postgres
     password: password
     hikari:
+      connection-timeout: 30000
       maximum-pool-size: 10
       minimum-idle: 5
+      initialization-fail-timeout: 60000
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
@@ -17,15 +22,10 @@ spring:
         show_sql: true
         format_sql: true
         default_schema: shopping_store
-
-server:
-  port: 0
-
-eureka:
-  client:
-    enabled: true
-  instance:
-    prefer-ip-address: true
+        jdbc:
+          batch_size: 20
+        order_inserts: true
+        order_updates: true
 
 logging:
   level:
