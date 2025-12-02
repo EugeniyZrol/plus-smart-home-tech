@@ -19,6 +19,9 @@ spring:
         show_sql: true
         format_sql: true
         default_schema: shopping_cart
+  cloud:
+    discovery:
+      enabled: false
 
 server:
   port: 8081
@@ -49,3 +52,9 @@ resilience4j:
 feign:
   circuitbreaker:
     enabled: true
+
+spring.cloud.openfeign.client.config:
+  warehouse:
+    url: http://localhost:8083
+  shopping-store:
+    url: http://localhost:8084

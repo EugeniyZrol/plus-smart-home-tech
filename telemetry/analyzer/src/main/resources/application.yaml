@@ -8,12 +8,12 @@ spring:
     consumer:
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.apache.kafka.common.serialization.ByteArrayDeserializer
-      auto-offset-reset: earliest
+      auto-offset-reset: latest
       enable-auto-commit: false
       properties:
         max.poll.records: 500
         max.poll.interval.ms: 300000
-        session.timeout.ms: 10000
+        session.timeout.ms: 30000
         heartbeat.interval.ms: 3000
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
@@ -21,14 +21,14 @@ spring:
       acks: all
       retries: 3
       batch-size: 16384
+      linger-ms: 0
+      buffer-memory: 33554432
+      request-timeout-ms: 30000
+      delivery-timeout-ms: 120000
       properties:
-        linger.ms: 0
-        buffer.memory: 33554432
-        request.timeout.ms: 30000
-        delivery.timeout.ms: 120000
         compression.type: snappy
   datasource:
-    url: jdbc:postgresql://localhost:5432/telemetry?currentSchema=telemetry
+    url: jdbc:postgresql://localhost:5432/telemetry
     username: postgres
     password: password
     hikari:
@@ -44,6 +44,8 @@ spring:
         default_schema: telemetry
 
 grpc:
+  server:
+    port: -1
   client:
     hub-router:
       address: static://localhost:59090

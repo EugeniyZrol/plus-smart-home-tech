@@ -19,6 +19,9 @@ spring:
         show_sql: true
         format_sql: true
         default_schema: warehouse
+  cloud:
+    discovery:
+      enabled: false
 
 server:
   port: 8083
@@ -26,3 +29,9 @@ server:
 logging:
   level:
     ru.yandex.practicum.commerce.warehouse: DEBUG
+
+spring.cloud.openfeign.client.config:
+  shopping-cart:
+    url: http://localhost:8081
+  shopping-store:
+    url: http://localhost:8084
