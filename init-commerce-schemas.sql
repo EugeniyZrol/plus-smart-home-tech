@@ -21,4 +21,9 @@ GRANT ALL PRIVILEGES ON SCHEMA shopping_cart TO postgres;
 GRANT ALL PRIVILEGES ON SCHEMA warehouse TO postgres;
 
 -- Устанавливаем search_path для пользователя postgres
-ALTER ROLE postgres SET search_path TO public,shopping_store,shopping_cart,warehouse;
+ALTER ROLE postgres SET search_path TO public,telemetry,shopping_store,shopping_cart,warehouse;
+
+-- Даем права на создание таблиц в схемах
+GRANT CREATE ON SCHEMA shopping_store TO postgres;
+GRANT CREATE ON SCHEMA shopping_cart TO postgres;
+GRANT CREATE ON SCHEMA warehouse TO postgres;

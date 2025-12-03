@@ -24,27 +24,14 @@ services:
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_DB: telemetry
+      POSTGRES_DB: telemetry  # Основная база данных
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./01-init-schemas.sql:/docker-entrypoint-initdb.d/01-init-schemas.sql
       - ./02-init-tables.sql:/docker-entrypoint-initdb.d/02-init-tables.sql
-
-  commerce-postgres:
-    image: postgres:15
-    container_name: commerce-postgres
-    ports:
-      - "5433:5432"
-    environment:
-      POSTGRES_DB: commerce
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
-    volumes:
-      - commerce_postgres_data:/var/lib/postgresql/data
-      - ./init-commerce-schemas.sql:/docker-entrypoint-initdb.d/init-commerce-schemas.sql
+      - ./init-commerce-schemas.sql:/docker-entrypoint-initdb.d/03-init-commerce-schemas.sql
 
 volumes:
   postgres_data:
-  commerce_postgres_data:
