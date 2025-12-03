@@ -31,7 +31,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./01-init-schemas.sql:/docker-entrypoint-initdb.d/01-init-schemas.sql
       - ./02-init-tables.sql:/docker-entrypoint-initdb.d/02-init-tables.sql
-      - ./init-commerce-schemas.sql:/docker-entrypoint-initdb.d/03-init-commerce-schemas.sql
+      - ./03-init-commerce-schemas.sql:/docker-entrypoint-initdb.d/03-init-commerce-schemas.sql
 
 volumes:
   postgres_data:
