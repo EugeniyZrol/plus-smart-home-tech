@@ -28,7 +28,7 @@ GRANT CREATE ON SCHEMA shopping_store TO postgres;
 GRANT CREATE ON SCHEMA shopping_cart TO postgres;
 GRANT CREATE ON SCHEMA warehouse TO postgres;
 
--- Создаем базовые таблицы для warehouse схемы (пример)
+-- Создаем базовые таблицы для warehouse схемы
 CREATE TABLE IF NOT EXISTS warehouse.products (
     id UUID PRIMARY KEY,
     product_id VARCHAR NOT NULL,
@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS warehouse.products (
     created_at TIMESTAMP DEFAULT NOW()
 );
 
--- Создаем базовые таблицы для shopping_cart схемы (пример)
+-- Создаем базовые таблицы для shopping_cart схемы
 CREATE TABLE IF NOT EXISTS shopping_cart.carts (
     id UUID PRIMARY KEY,
     username VARCHAR NOT NULL,
@@ -46,7 +46,7 @@ CREATE TABLE IF NOT EXISTS shopping_cart.carts (
     created_at TIMESTAMP DEFAULT NOW()
 );
 
--- Создаем базовые таблицы для shopping_store схемы (пример)
+-- Создаем базовые таблицы для shopping_store схемы
 CREATE TABLE IF NOT EXISTS shopping_store.products (
     id UUID PRIMARY KEY,
     name VARCHAR NOT NULL,
