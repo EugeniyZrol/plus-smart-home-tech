@@ -19,6 +19,10 @@
         <module>telemetry</module>
         <module>infra</module>
         <module>commerce</module>
+        <module>commerce/shopping-store</module>
+        <module>commerce/shopping-cart</module>
+        <module>commerce/warehouse</module>
+        <module>commerce/interaction-api</module>
     </modules>
 
     <properties>
@@ -28,10 +32,19 @@
         <springdoc.version>2.6.0</springdoc.version>
         <protobuf.version>3.25.3</protobuf.version>
         <grpc.version>1.59.0</grpc.version>
+        <spring-cloud-dependencies.version>2023.0.3</spring-cloud-dependencies.version>
+        <mapstruct.version>1.5.5.Final</mapstruct.version>
     </properties>
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>${spring-cloud-dependencies.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
             <dependency>
                 <groupId>org.apache.avro</groupId>
                 <artifactId>avro</artifactId>
@@ -71,6 +84,11 @@
                 <groupId>jakarta.annotation</groupId>
                 <artifactId>jakarta.annotation-api</artifactId>
                 <version>2.1.1</version>
+            </dependency>
+            <dependency>
+                <groupId>org.mapstruct</groupId>
+                <artifactId>mapstruct</artifactId>
+                <version>${mapstruct.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

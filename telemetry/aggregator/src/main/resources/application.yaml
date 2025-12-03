@@ -1,0 +1,42 @@
+spring:
+  application:
+    name: aggregator
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: aggregator-group
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: ru.yandex.practicum.telemetry.serdes.deserializer.SensorEventDeserializer
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: ru.yandex.practicum.telemetry.serdes.serializer.SensorsSnapshotSerializer
+      acks: all
+      retries: 3
+      batch-size: 16384
+      properties:
+        linger.ms: 10
+        buffer.memory: 33554432
+
+aggregator:
+  kafka:
+    producer:
+      topic: telemetry.snapshots.v1
+      properties:
+        compression.type: snappy
+    consumer:
+      topic: telemetry.sensors.v1
+      poll-timeout: 100ms
+      properties:
+        max.poll.records: 500
+        session.timeout.ms: 30000
+        max.poll.interval.ms: 300000
+
+server:
+  port: 8082
+
+logging:
+  level:
+    ru.yandex.practicum.telemetry.aggregator: DEBUG
+    org.apache.kafka: WARN

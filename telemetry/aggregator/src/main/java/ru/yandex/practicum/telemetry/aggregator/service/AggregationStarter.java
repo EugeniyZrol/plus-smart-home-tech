@@ -8,12 +8,11 @@ import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.WakeupException;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.kafka.telemetry.event.SensorEventAvro;
 import ru.yandex.practicum.kafka.telemetry.event.SensorsSnapshotAvro;
+import ru.yandex.practicum.telemetry.aggregator.config.KafkaConfigProperties;
 
-import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -27,11 +26,8 @@ public class AggregationStarter {
     private final KafkaConsumer<String, SensorEventAvro> kafkaConsumer;
     private final Producer<String, SensorsSnapshotAvro> kafkaProducer;
     private final AggregatorService aggregatorService;
-
-    @Value("${kafka.topics.sensor-events:telemetry.sensors.v1}")
-    private String sensorEventsTopic;
-
-    private final ConcurrentHashMap<TopicPartition, OffsetAndMetadata> pendingOffsets = new ConcurrentHashMap<>();
+    private final KafkaConfigProperties kafkaConfigProperties;
+    private final Map<TopicPartition, OffsetAndMetadata> pendingOffsets = new ConcurrentHashMap<>();
 
     public void start() {
         Thread mainThread = Thread.currentThread();
@@ -41,12 +37,15 @@ public class AggregationStarter {
         }));
 
         try {
-            kafkaConsumer.subscribe(Collections.singletonList(sensorEventsTopic));
-            log.info("Агрегатор запущен. Подписан на топик: {}", sensorEventsTopic);
+            kafkaConsumer.subscribe(Collections.singletonList(
+                    kafkaConfigProperties.getConsumer().getTopic()
+            ));
+            log.info("Агрегатор запущен. Подписан на топик: {}",
+                    kafkaConfigProperties.getConsumer().getTopic());
 
             while (true) {
-                ConsumerRecords<String, SensorEventAvro> records = kafkaConsumer.poll(Duration.ofMillis(100));
-
+                ConsumerRecords<String, SensorEventAvro> records =
+                        kafkaConsumer.poll(kafkaConfigProperties.getConsumer().getPollTimeout());
                 if (records.isEmpty()) {
                     continue;
                 }

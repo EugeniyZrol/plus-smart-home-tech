@@ -1,4 +1,3 @@
-version: '3'
 services:
   kafka:
     image: apache/kafka:3.7.0
@@ -25,7 +24,7 @@ services:
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_DB: telemetry
+      POSTGRES_DB: telemetry  # Основная база данных
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
     volumes:
