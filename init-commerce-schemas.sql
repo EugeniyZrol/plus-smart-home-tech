@@ -27,3 +27,30 @@ ALTER ROLE postgres SET search_path TO public,shopping_store,shopping_cart,wareh
 GRANT CREATE ON SCHEMA shopping_store TO postgres;
 GRANT CREATE ON SCHEMA shopping_cart TO postgres;
 GRANT CREATE ON SCHEMA warehouse TO postgres;
+
+-- Создаем базовые таблицы для warehouse схемы (пример)
+CREATE TABLE IF NOT EXISTS warehouse.products (
+    id UUID PRIMARY KEY,
+    product_id VARCHAR NOT NULL,
+    dimension JSONB,
+    weight DECIMAL,
+    fragile BOOLEAN,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Создаем базовые таблицы для shopping_cart схемы (пример)
+CREATE TABLE IF NOT EXISTS shopping_cart.carts (
+    id UUID PRIMARY KEY,
+    username VARCHAR NOT NULL,
+    status VARCHAR,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Создаем базовые таблицы для shopping_store схемы (пример)
+CREATE TABLE IF NOT EXISTS shopping_store.products (
+    id UUID PRIMARY KEY,
+    name VARCHAR NOT NULL,
+    category VARCHAR,
+    product_state VARCHAR,
+    created_at TIMESTAMP DEFAULT NOW()
+);
