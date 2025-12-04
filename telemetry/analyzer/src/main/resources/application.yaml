@@ -37,11 +37,19 @@ spring:
       minimum-idle: 5
   jpa:
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: validate
     show-sql: false
     properties:
       hibernate:
         default_schema: telemetry
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema.sql
+      continue-on-error: true
+
+server:
+  port: 0
 
 grpc:
   server:
@@ -73,20 +81,17 @@ app:
       - "Выключить весь свет"
     command-delay-ms: 10
     max-retry-attempts: 3
-
   grpc:
     retry-status-codes:
       - "UNAVAILABLE"
       - "DEADLINE_EXCEEDED"
     retry-delay-ms: 100
-
   sensor-state:
     cache:
       enabled: true
       ttl-minutes: 60
       max-size: 10000
       cleanup-interval-minutes: 5
-
   conditions:
     allowed-operations:
       - "EQUALS"
