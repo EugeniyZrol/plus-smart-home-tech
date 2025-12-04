@@ -1,13 +1,5 @@
--- Создаём схему если не существует
-DO $$
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'shopping_store') THEN
-        EXECUTE 'CREATE SCHEMA shopping_store';
-        RAISE NOTICE 'Схема shopping_store создана';
-    ELSE
-        RAISE NOTICE 'Схема shopping_store уже существует';
-    END IF;
-END $$;
+-- Простое создание схемы
+CREATE SCHEMA IF NOT EXISTS shopping_store;
 
 -- Создаём таблицы
 CREATE TABLE IF NOT EXISTS shopping_store.products (

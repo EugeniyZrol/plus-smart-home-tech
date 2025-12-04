@@ -1,13 +1,5 @@
--- Создаём схему если не существует
-DO $$
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'warehouse') THEN
-        EXECUTE 'CREATE SCHEMA warehouse';
-        RAISE NOTICE 'Схема warehouse создана';
-    ELSE
-        RAISE NOTICE 'Схема warehouse уже существует';
-    END IF;
-END $$;
+-- Простое создание схемы
+CREATE SCHEMA IF NOT EXISTS warehouse;
 
 -- Создаём таблицы
 CREATE TABLE IF NOT EXISTS warehouse.warehouse_products (

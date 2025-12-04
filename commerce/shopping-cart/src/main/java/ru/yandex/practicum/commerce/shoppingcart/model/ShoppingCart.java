@@ -10,7 +10,7 @@ import java.util.UUID;
 
 @Data
 @Entity
-@Table(name = "shopping_carts")
+@Table(schema = "shopping_cart", name = "shopping_carts")
 public class ShoppingCart {
 
     @Id
@@ -21,8 +21,11 @@ public class ShoppingCart {
     private String username;
 
     @ElementCollection
-    @CollectionTable(name = "shopping_cart_items",
-            joinColumns = @JoinColumn(name = "shopping_cart_id"))
+    @CollectionTable(
+            schema = "shopping_cart",
+            name = "shopping_cart_items",
+            joinColumns = @JoinColumn(name = "shopping_cart_id")
+    )
     @MapKeyColumn(name = "product_id")
     @Column(name = "quantity")
     private Map<UUID, Integer> products;

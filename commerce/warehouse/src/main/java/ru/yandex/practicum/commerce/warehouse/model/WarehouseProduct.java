@@ -7,7 +7,7 @@ import java.util.UUID;
 
 @Data
 @Entity
-@Table(name = "warehouse_products")
+@Table(schema = "warehouse", name = "warehouse_products")
 public class WarehouseProduct {
 
     @Id
