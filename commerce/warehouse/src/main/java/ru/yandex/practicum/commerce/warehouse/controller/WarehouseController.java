@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.commerce.interaction.dto.*;
-import ru.yandex.practicum.commerce.interaction.feign.WarehouseClient;
+import ru.yandex.practicum.commerce.interaction.feign.operations.WarehouseOperations;
 import ru.yandex.practicum.commerce.warehouse.service.WarehouseService;
 
 import jakarta.validation.Valid;
@@ -12,7 +12,7 @@ import jakarta.validation.Valid;
 @RestController
 @RequestMapping("/api/v1/warehouse")
 @RequiredArgsConstructor
-public class WarehouseController implements WarehouseClient {
+public class WarehouseController implements WarehouseOperations {
 
     private final WarehouseService warehouseService;
 

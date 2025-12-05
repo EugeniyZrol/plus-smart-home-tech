@@ -8,7 +8,7 @@ import ru.yandex.practicum.commerce.interaction.dto.ChangeProductQuantityRequest
 import ru.yandex.practicum.commerce.interaction.dto.ShoppingCartDto;
 import ru.yandex.practicum.commerce.interaction.exception.NoProductsInShoppingCartException;
 import ru.yandex.practicum.commerce.interaction.exception.NotAuthorizedUserException;
-import ru.yandex.practicum.commerce.interaction.feign.WarehouseClient;
+import ru.yandex.practicum.commerce.interaction.feign.client.WarehouseClient;
 import ru.yandex.practicum.commerce.shoppingcart.model.ShoppingCart;
 import ru.yandex.practicum.commerce.shoppingcart.repository.ShoppingCartRepository;
 import ru.yandex.practicum.commerce.interaction.enums.ShoppingCartStatus;

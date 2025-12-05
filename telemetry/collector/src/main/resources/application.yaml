@@ -1,34 +1,18 @@
 spring:
   application:
     name: collector
-  kafka:
-    bootstrap-servers: localhost:9092
-    producer:
-      key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.apache.kafka.common.serialization.ByteArraySerializer
-      acks: all
-      retries: 3
-      batch-size: 16384
-      properties:
-        linger.ms: 1
-        buffer.memory: 33554432
+  config:
+    import: "optional:configserver:"
+  cloud:
+    config:
+      discovery:
+        enabled: true
+        service-id: config-server
+      fail-fast: false
 
-server:
-  port: 8080
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/
+    enabled: true
 
-grpc:
-  server:
-    port: 59091
-
-kafka:
-  topic:
-    telemetry:
-      hubs: telemetry.hubs.v1
-      sensors: telemetry.sensors.v1
-
-logging:
-  level:
-    ru.yandex.practicum: DEBUG
-    org.apache.kafka: WARN
-    net:
-      devh: INFO

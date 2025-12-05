@@ -31,8 +31,13 @@ aggregator:
         session.timeout.ms: 30000
         max.poll.interval.ms: 300000
 
+kafka:
+  topics:
+    sensorEvents: telemetry.sensors.v1
+    snapshots: telemetry.snapshots.v1
+
 server:
-  port: 8082
+  port: 0
 
 logging:
   level:

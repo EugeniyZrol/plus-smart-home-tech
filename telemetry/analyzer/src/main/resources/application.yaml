@@ -1,103 +1,24 @@
 spring:
   application:
     name: analyzer
+  config:
+    import: "optional:configserver:"
+  cloud:
+    config:
+      discovery:
+        enabled: true
+        service-id: config-server
+      fail-fast: false
   main:
     web-application-type: none
-  kafka:
-    bootstrap-servers: localhost:9092
-    consumer:
-      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.apache.kafka.common.serialization.ByteArrayDeserializer
-      auto-offset-reset: latest
-      enable-auto-commit: false
-      properties:
-        max.poll.records: 500
-        max.poll.interval.ms: 300000
-        session.timeout.ms: 30000
-        heartbeat.interval.ms: 3000
-    producer:
-      key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.apache.kafka.common.serialization.ByteArraySerializer
-      acks: all
-      retries: 3
-      batch-size: 16384
-      linger-ms: 0
-      buffer-memory: 33554432
-      request-timeout-ms: 30000
-      delivery-timeout-ms: 120000
-      properties:
-        compression.type: snappy
-  datasource:
-    url: jdbc:postgresql://localhost:5432/telemetry
-    username: postgres
-    password: password
-    hikari:
-      connection-timeout: 30000
-      maximum-pool-size: 10
-      minimum-idle: 5
-  jpa:
-    hibernate:
-      ddl-auto: validate
-    show-sql: false
-    properties:
-      hibernate:
-        default_schema: telemetry
-  sql:
-    init:
-      mode: always
-      schema-locations: classpath:schema.sql
-      continue-on-error: true
 
-server:
-  port: 0
-
-grpc:
-  server:
-    port: -1
+eureka:
   client:
-    hub-router:
-      address: static://localhost:59090
-      negotiation-type: plaintext
-      enable-keep-alive: true
-      keep-alive-without-calls: true
-
-aggregator:
-  kafka:
-    producer:
-      topic: telemetry.commands.v1
-    consumer:
-      snapshots-topic: telemetry.snapshots.v1
-      hub-events-topic: telemetry.hubs.v1
-      sensor-events-topic: telemetry.sensors.v1
-      snapshots-group-id: analyzer-snapshots-group
-      hub-events-group-id: analyzer-hubevents-group
-      sensor-events-group-id: analyzer-sensorevents-group
-      poll-timeout: 100ms
-
-app:
-  scenarios:
-    turn-off-all-lights-name: "Выключить весь свет"
-    special-scenarios:
-      - "Выключить весь свет"
-    command-delay-ms: 10
-    max-retry-attempts: 3
-  grpc:
-    retry-status-codes:
-      - "UNAVAILABLE"
-      - "DEADLINE_EXCEEDED"
-    retry-delay-ms: 100
-  sensor-state:
-    cache:
-      enabled: true
-      ttl-minutes: 60
-      max-size: 10000
-      cleanup-interval-minutes: 5
-  conditions:
-    allowed-operations:
-      - "EQUALS"
-      - "GREATER_THAN"
-      - "LOWER_THAN"
-
-logging:
-  level:
-    ru.yandex.practicum.telemetry.analyzer: INFO
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/
+    enabled: true
+    fetch-registry: true
+    register-with-eureka: true
+  instance:
+    hostname: localhost
+    preferIpAddress: false

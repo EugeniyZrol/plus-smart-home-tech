@@ -52,7 +52,6 @@
             <version>${mapstruct.version}</version>
         </dependency>
 
-        <!-- Добавить эти зависимости -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-config</artifactId>
@@ -62,7 +61,6 @@
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
         </dependency>
-        <!-- Конец добавленных зависимостей -->
 
         <dependency>
             <groupId>org.springframework.cloud</groupId>

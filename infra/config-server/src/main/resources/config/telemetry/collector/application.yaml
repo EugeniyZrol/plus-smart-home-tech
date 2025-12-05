@@ -10,7 +10,7 @@ spring:
       buffer-memory: 33554432
 
 server:
-  port: 8080
+  port: 0
 
 grpc:
   server:

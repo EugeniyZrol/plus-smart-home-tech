@@ -1,6 +1,8 @@
 package ru.yandex.practicum.commerce.shoppingstore.model;
 
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
+import org.hibernate.proxy.HibernateProxy;
 import ru.yandex.practicum.commerce.interaction.enums.ProductCategory;
 import ru.yandex.practicum.commerce.interaction.enums.ProductState;
 import ru.yandex.practicum.commerce.interaction.enums.QuantityState;
@@ -8,9 +10,11 @@ import ru.yandex.practicum.commerce.interaction.enums.QuantityState;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Objects;
 import java.util.UUID;
 
-@Data
+@Getter
+@Setter
 @Entity
 @Table(schema = "shopping_store", name = "products")
 public class Product {
@@ -47,4 +51,24 @@ public class Product {
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null) return false;
+        Class<?> oEffectiveClass = o instanceof HibernateProxy ?
+                ((HibernateProxy) o).getHibernateLazyInitializer().getPersistentClass() :
+                o.getClass();
+        Class<?> thisEffectiveClass = this instanceof HibernateProxy ?
+                ((HibernateProxy) this).getHibernateLazyInitializer().getPersistentClass() :
+                this.getClass();
+        if (thisEffectiveClass != oEffectiveClass) return false;
+        Product product = (Product) o;
+        return getProductId() != null && Objects.equals(getProductId(), product.getProductId());
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
+    }
 }
