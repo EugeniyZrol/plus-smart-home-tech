@@ -9,6 +9,5 @@ import java.util.List;
 @Component
 @ConfigurationProperties(prefix = "app.conditions")
 public class ComparisonProperties {
-
-    private List<String> allowedOperations = List.of("EQUALS", "GREATER_THAN", "LOWER_THAN");
+    private List<String> allowedOperations;
 }

@@ -1,0 +1,24 @@
+spring:
+  application:
+    name: analyzer
+  config:
+    import: "optional:configserver:"
+  cloud:
+    config:
+      discovery:
+        enabled: true
+        service-id: config-server
+      fail-fast: false
+  main:
+    web-application-type: none
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/
+    enabled: true
+    fetch-registry: true
+    register-with-eureka: true
+  instance:
+    hostname: localhost
+    preferIpAddress: false

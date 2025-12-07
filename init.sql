@@ -1,69 +1,61 @@
--- создаём таблицу scenarios
-CREATE TABLE IF NOT EXISTS scenarios (
+-- 1. Создаём базы данных
+SELECT 'CREATE DATABASE telemetry'
+WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'telemetry')\gexec
+
+SELECT 'CREATE DATABASE commerce'
+WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'commerce')\gexec
+
+-- 2. Инициализируем базу telemetry
+\c telemetry
+CREATE SCHEMA IF NOT EXISTS telemetry;
+GRANT ALL ON SCHEMA telemetry TO postgres;
+
+-- Таблицы telemetry
+CREATE TABLE IF NOT EXISTS telemetry.scenarios (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     hub_id VARCHAR,
     name VARCHAR,
     UNIQUE(hub_id, name)
 );
 
--- создаём таблицу sensors
-CREATE TABLE IF NOT EXISTS sensors (
+CREATE TABLE IF NOT EXISTS telemetry.sensors (
     id VARCHAR PRIMARY KEY,
     hub_id VARCHAR
 );
 
--- создаём таблицу conditions
-CREATE TABLE IF NOT EXISTS conditions (
+CREATE TABLE IF NOT EXISTS telemetry.conditions (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     type VARCHAR,
     operation VARCHAR,
     value INTEGER
 );
 
--- создаём таблицу actions
-CREATE TABLE IF NOT EXISTS actions (
+CREATE TABLE IF NOT EXISTS telemetry.actions (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     type VARCHAR,
     value INTEGER
 );
 
--- создаём таблицу scenario_conditions, связывающую сценарий, датчик и условие активации сценария
-CREATE TABLE IF NOT EXISTS scenario_conditions (
-    scenario_id BIGINT REFERENCES scenarios(id),
-    sensor_id VARCHAR REFERENCES sensors(id),
-    condition_id BIGINT REFERENCES conditions(id),
+CREATE TABLE IF NOT EXISTS telemetry.scenario_conditions (
+    scenario_id BIGINT REFERENCES telemetry.scenarios(id),
+    sensor_id VARCHAR REFERENCES telemetry.sensors(id),
+    condition_id BIGINT REFERENCES telemetry.conditions(id),
     PRIMARY KEY (scenario_id, sensor_id, condition_id)
 );
 
--- создаём таблицу scenario_actions, связывающую сценарий, датчик и действие, которое нужно выполнить при активации сценария
-CREATE TABLE IF NOT EXISTS scenario_actions (
-    scenario_id BIGINT REFERENCES scenarios(id),
-    sensor_id VARCHAR REFERENCES sensors(id),
-    action_id BIGINT REFERENCES actions(id),
+CREATE TABLE IF NOT EXISTS telemetry.scenario_actions (
+    scenario_id BIGINT REFERENCES telemetry.scenarios(id),
+    sensor_id VARCHAR REFERENCES telemetry.sensors(id),
+    action_id BIGINT REFERENCES telemetry.actions(id),
     PRIMARY KEY (scenario_id, sensor_id, action_id)
 );
 
--- создаём функцию для проверки, что связываемые сценарий и датчик работают с одним и тем же хабом
-CREATE OR REPLACE FUNCTION check_hub_id()
-RETURNS TRIGGER AS
-'
-BEGIN
-    IF (SELECT hub_id FROM scenarios WHERE id = NEW.scenario_id) != (SELECT hub_id FROM sensors WHERE id = NEW.sensor_id) THEN
-        RAISE EXCEPTION ''Hub IDs do not match for scenario_id % and sensor_id %'', NEW.scenario_id, NEW.sensor_id;
-    END IF;
-    RETURN NEW;
-END;
-'
-LANGUAGE plpgsql;
+-- 3. Инициализируем базу commerce
+\c commerce
+CREATE SCHEMA IF NOT EXISTS shopping_store;
+CREATE SCHEMA IF NOT EXISTS shopping_cart;
+CREATE SCHEMA IF NOT EXISTS warehouse;
 
--- создаём триггер, проверяющий, что «условие» связывает корректные сценарий и датчик
-CREATE OR REPLACE TRIGGER tr_bi_scenario_conditions_hub_id_check
-BEFORE INSERT ON scenario_conditions
-FOR EACH ROW
-EXECUTE FUNCTION check_hub_id();
-
--- создаём триггер, проверяющий, что «действие» связывает корректные сценарий и датчик
-CREATE OR REPLACE TRIGGER tr_bi_scenario_actions_hub_id_check
-BEFORE INSERT ON scenario_actions
-FOR EACH ROW
-EXECUTE FUNCTION check_hub_id();
+GRANT ALL ON SCHEMA shopping_store TO postgres;
+GRANT ALL ON SCHEMA shopping_cart TO postgres;
+GRANT ALL ON SCHEMA warehouse TO postgres;
