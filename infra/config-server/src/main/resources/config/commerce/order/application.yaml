@@ -1,0 +1,90 @@
+server:
+  port: 8084
+
+spring:
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/commerce?currentSchema=orders
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:password}
+    hikari:
+      connection-timeout: 30000
+      maximum-pool-size: 10
+      minimum-idle: 5
+      initialization-fail-timeout: 60000
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+    properties:
+      hibernate:
+        show_sql: true
+        format_sql: true
+        default_schema: orders
+        jdbc:
+          batch_size: 20
+        order_inserts: true
+        order_updates: true
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema.sql
+      continue-on-error: true
+  task:
+    scheduling:
+      enabled: true
+      pool:
+        size: 5
+      thread-name-prefix: order-scheduler-
+
+logging:
+  level:
+    ru.yandex.practicum.commerce.order: DEBUG
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      warehouse:
+        failure-rate-threshold: 50
+        slow-call-rate-threshold: 50
+        slow-call-duration-threshold: 2s
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 3
+        minimum-number-of-calls: 5
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 10
+      shopping-cart:
+        failure-rate-threshold: 50
+        slow-call-rate-threshold: 50
+        slow-call-duration-threshold: 2s
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 3
+        minimum-number-of-calls: 5
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 10
+
+  timelimiter:
+    instances:
+      warehouse:
+        timeout-duration: 3s
+      shopping-cart:
+        timeout-duration: 3s
+
+feign:
+  circuitbreaker:
+    enabled: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: always
+
+eureka:
+  instance:
+    hostname: localhost
+    preferIpAddress: false
+    instance-id: order:${random.value}

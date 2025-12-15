@@ -1,8 +1,8 @@
 package ru.yandex.practicum.commerce.interaction.feign.operations;
 
 import org.springframework.http.ResponseEntity;
-import ru.yandex.practicum.commerce.interaction.dto.ChangeProductQuantityRequest;
-import ru.yandex.practicum.commerce.interaction.dto.ShoppingCartDto;
+import ru.yandex.practicum.commerce.interaction.dto.warehouse.ChangeProductQuantityRequest;
+import ru.yandex.practicum.commerce.interaction.dto.shoppingcart.ShoppingCartDto;
 
 import java.util.List;
 import java.util.Map;
@@ -25,4 +25,7 @@ public interface ShoppingCartOperations {
             ChangeProductQuantityRequest request);
 
     ResponseEntity<Void> deactivateCurrentShoppingCart(String username);
+
+    ResponseEntity<ShoppingCartDto> getShoppingCartById(UUID shoppingCartId);
+
 }

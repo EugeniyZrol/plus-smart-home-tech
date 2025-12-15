@@ -1,0 +1,129 @@
+spring:
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: false
+      routes:
+        - id: shopping_cart_service_route
+          uri: lb://shopping-cart
+          predicates:
+            - Path=/shopping-cart/**
+          filters:
+            - RewritePath=/shopping-cart/(?<segment>.*), /api/v1/shopping-cart/$\{segment}
+
+        - id: shopping_store_service_route
+          uri: lb://shopping-store
+          predicates:
+            - Path=/shopping-store/**
+          filters:
+            - RewritePath=/shopping-store/(?<segment>.*), /api/v1/shopping-store/$\{segment}
+            - name: Retry
+              args:
+                retries: 3
+                statuses: INTERNAL_SERVER_ERROR, BAD_GATEWAY, SERVICE_UNAVAILABLE, GATEWAY_TIMEOUT
+                methods: GET,POST,PUT,DELETE
+                backoff:
+                  firstBackoff: 100ms
+                  maxBackoff: 1s
+                  factor: 2
+
+        - id: warehouse_service_route
+          uri: lb://warehouse
+          predicates:
+            - Path=/warehouse/**
+          filters:
+            - RewritePath=/warehouse/(?<segment>.*), /api/v1/warehouse/$\{segment}
+            - name: CircuitBreaker
+              args:
+                name: warehouseCircuitBreaker
+            - name: Retry
+              args:
+                retries: 3
+                statuses: INTERNAL_SERVER_ERROR, BAD_GATEWAY, SERVICE_UNAVAILABLE, GATEWAY_TIMEOUT
+                methods: GET,POST,PUT,DELETE
+                backoff:
+                  firstBackoff: 100ms
+                  maxBackoff: 1s
+                  factor: 2
+
+        - id: order_service_route
+          uri: lb://order
+          predicates:
+            - Path=/order/**
+          filters:
+            - RewritePath=/order/(?<segment>.*), /api/v1/order/$\{segment}
+            - name: CircuitBreaker
+              args:
+                name: orderCircuitBreaker
+            - name: Retry
+              args:
+                retries: 3
+                statuses: INTERNAL_SERVER_ERROR, BAD_GATEWAY, SERVICE_UNAVAILABLE, GATEWAY_TIMEOUT
+                methods: GET,POST,PUT,DELETE
+                backoff:
+                  firstBackoff: 100ms
+                  maxBackoff: 1s
+                  factor: 2
+
+        - id: payment_service_route
+          uri: lb://payment
+          predicates:
+            - Path=/payment/**
+          filters:
+            - RewritePath=/payment/(?<segment>.*), /api/v1/payment/$\{segment}
+            - name: CircuitBreaker
+              args:
+                name: paymentCircuitBreaker
+            - name: Retry
+              args:
+                retries: 3
+                statuses: INTERNAL_SERVER_ERROR, BAD_GATEWAY, SERVICE_UNAVAILABLE, GATEWAY_TIMEOUT
+                methods: GET,POST,PUT,DELETE
+                backoff:
+                  firstBackoff: 100ms
+                  maxBackoff: 1s
+                  factor: 2
+
+        - id: delivery_service_route
+          uri: lb://delivery
+          predicates:
+            - Path=/delivery/**
+          filters:
+            - RewritePath=/delivery/(?<segment>.*), /api/v1/delivery/$\{segment}
+            - name: CircuitBreaker
+              args:
+                name: deliveryCircuitBreaker
+            - name: Retry
+              args:
+                retries: 3
+                statuses: INTERNAL_SERVER_ERROR, BAD_GATEWAY, SERVICE_UNAVAILABLE, GATEWAY_TIMEOUT
+                methods: GET,POST,PUT,DELETE
+                backoff:
+                  firstBackoff: 100ms
+                  maxBackoff: 1s
+                  factor: 2
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      warehouseCircuitBreaker:
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 5s
+      orderCircuitBreaker:
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 5s
+      paymentCircuitBreaker:
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 5s
+      deliveryCircuitBreaker:
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 5s

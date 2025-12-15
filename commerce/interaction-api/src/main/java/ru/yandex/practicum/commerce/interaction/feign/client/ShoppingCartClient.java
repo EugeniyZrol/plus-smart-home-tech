@@ -1,17 +1,20 @@
 package ru.yandex.practicum.commerce.interaction.feign.client;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import ru.yandex.practicum.commerce.interaction.dto.ChangeProductQuantityRequest;
-import ru.yandex.practicum.commerce.interaction.dto.ShoppingCartDto;
+import ru.yandex.practicum.commerce.interaction.dto.warehouse.ChangeProductQuantityRequest;
+import ru.yandex.practicum.commerce.interaction.dto.shoppingcart.ShoppingCartDto;
+import ru.yandex.practicum.commerce.interaction.feign.client.fallback.ShoppingCartClientFallback;
 import ru.yandex.practicum.commerce.interaction.feign.operations.ShoppingCartOperations;
 
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-@FeignClient(name = "shopping-cart")
+@FeignClient(name = "shopping-cart", fallback = ShoppingCartClientFallback.class)
+@CircuitBreaker(name = "shopping-cart")
 public interface ShoppingCartClient extends ShoppingCartOperations {
 
     @Override
@@ -39,4 +42,8 @@ public interface ShoppingCartClient extends ShoppingCartOperations {
     @Override
     @DeleteMapping("/api/v1/shopping-cart")
     ResponseEntity<Void> deactivateCurrentShoppingCart(@RequestParam("username") String username);
+
+    @Override
+    @GetMapping("/api/v1/shopping-cart/{shoppingCartId}")
+    ResponseEntity<ShoppingCartDto> getShoppingCartById(@PathVariable("shoppingCartId") UUID shoppingCartId);
 }

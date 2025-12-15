@@ -4,8 +4,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.yandex.practicum.commerce.interaction.dto.ChangeProductQuantityRequest;
-import ru.yandex.practicum.commerce.interaction.dto.ShoppingCartDto;
+import ru.yandex.practicum.commerce.interaction.dto.warehouse.ChangeProductQuantityRequest;
+import ru.yandex.practicum.commerce.interaction.dto.shoppingcart.ShoppingCartDto;
 import ru.yandex.practicum.commerce.interaction.exception.NoProductsInShoppingCartException;
 import ru.yandex.practicum.commerce.interaction.exception.NotAuthorizedUserException;
 import ru.yandex.practicum.commerce.interaction.feign.client.WarehouseClient;
@@ -72,20 +72,23 @@ public class ShoppingCartServiceImpl implements ShoppingCartService {
                 .orElseThrow(() -> new NoProductsInShoppingCartException("Не найдена активная корзина для пользователя"));
 
         Set<UUID> cartProductIds = shoppingCart.getProducts().keySet();
+        List<UUID> productsToRemove = productIdsToRemove.stream()
+                .filter(cartProductIds::contains)
+                .collect(Collectors.toList());
+
         Set<UUID> missingProducts = productIdsToRemove.stream()
                 .filter(productId -> !cartProductIds.contains(productId))
                 .collect(Collectors.toSet());
 
         if (!missingProducts.isEmpty()) {
-            log.warn("Попытка удалить несуществующие продукты из корзины: {}, пользователь: {}", missingProducts, username);
-            throw new NoProductsInShoppingCartException(
-                    "Продукты не найдены в корзине: " + missingProducts);
+            log.warn("Попытка удалить несуществующие продукты из корзины: {}, пользователь: {}",
+                    missingProducts, username);
         }
 
-        productIdsToRemove.forEach(shoppingCart.getProducts()::remove);
+        productsToRemove.forEach(shoppingCart.getProducts()::remove);
 
         ShoppingCart saved = shoppingCartRepository.save(shoppingCart);
-        log.info("Удалены продукты из корзины пользователя: {}, продукты: {}", username, productIdsToRemove);
+        log.info("Удалены продукты из корзины пользователя: {}, продукты: {}", username, productsToRemove);
         return shoppingCartMapper.toDto(saved);
     }
 
@@ -124,6 +127,15 @@ public class ShoppingCartServiceImpl implements ShoppingCartService {
         shoppingCart.setStatus(ShoppingCartStatus.DEACTIVATED);
         shoppingCartRepository.save(shoppingCart);
         log.info("Деактивирована корзина пользователя: {}", username);
+    }
+
+    @Override
+    public ShoppingCartDto getShoppingCartById(UUID shoppingCartId) {
+        ShoppingCart shoppingCart = shoppingCartRepository.findById(shoppingCartId)
+                .orElseThrow(() -> new NoProductsInShoppingCartException("Корзина не найдена: " + shoppingCartId));
+
+        log.info("Получена корзина по ID: {}", shoppingCartId);
+        return shoppingCartMapper.toDto(shoppingCart);
     }
 
     private ShoppingCart createNewShoppingCart(String username) {
