@@ -2,7 +2,7 @@ package ru.yandex.practicum.commerce.warehouse.mapper;
 
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import ru.yandex.practicum.commerce.interaction.dto.NewProductInWarehouseRequest;
+import ru.yandex.practicum.commerce.interaction.dto.warehouse.NewProductInWarehouseRequest;
 import ru.yandex.practicum.commerce.warehouse.model.WarehouseProduct;
 
 @Mapper(componentModel = "spring")
