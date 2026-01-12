@@ -5,14 +5,24 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.yandex.practicum.commerce.interaction.dto.*;
+import ru.yandex.practicum.commerce.interaction.dto.delivery.ShippedToDeliveryRequest;
+import ru.yandex.practicum.commerce.interaction.dto.shoppingcart.ShoppingCartDto;
+import ru.yandex.practicum.commerce.interaction.dto.warehouse.AddProductToWarehouseRequest;
+import ru.yandex.practicum.commerce.interaction.dto.warehouse.AssemblyProductsForOrderRequest;
+import ru.yandex.practicum.commerce.interaction.dto.warehouse.BookedProductsDto;
+import ru.yandex.practicum.commerce.interaction.dto.warehouse.NewProductInWarehouseRequest;
+import ru.yandex.practicum.commerce.interaction.enums.WarehouseOrderStatus;
 import ru.yandex.practicum.commerce.interaction.exception.NoSpecifiedProductInWarehouseException;
 import ru.yandex.practicum.commerce.interaction.exception.ProductInShoppingCartLowQuantityInWarehouse;
 import ru.yandex.practicum.commerce.interaction.exception.SpecifiedProductAlreadyInWarehouseException;
 import ru.yandex.practicum.commerce.warehouse.mapper.WarehouseMapper;
+import ru.yandex.practicum.commerce.warehouse.model.OrderBooking;
 import ru.yandex.practicum.commerce.warehouse.model.WarehouseProduct;
+import ru.yandex.practicum.commerce.warehouse.repository.OrderBookingRepository;
 import ru.yandex.practicum.commerce.warehouse.repository.WarehouseProductRepository;
 
 import java.security.SecureRandom;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -23,6 +33,8 @@ public class WarehouseServiceImpl implements WarehouseService {
 
     private final WarehouseProductRepository warehouseProductRepository;
     private final WarehouseMapper warehouseMapper;
+    private final OrderBookingRepository orderBookingRepository;
+
 
     private static final String[] ADDRESSES = new String[] {"ADDRESS_1", "ADDRESS_2"};
     private static final String CURRENT_ADDRESS;
@@ -133,5 +145,136 @@ public class WarehouseServiceImpl implements WarehouseService {
 
         log.debug("Возвращаем адрес склада: {}", CURRENT_ADDRESS);
         return address;
+    }
+
+    @Override
+    @Transactional
+    public BookedProductsDto assemblyProductsForOrder(AssemblyProductsForOrderRequest request) {
+        Map<UUID, Integer> orderProducts = request.getProducts();
+
+        if (orderProducts.isEmpty()) {
+            throw new ProductInShoppingCartLowQuantityInWarehouse("Список товаров для сборки пуст");
+        }
+
+        List<UUID> productIds = new ArrayList<>(orderProducts.keySet());
+        List<WarehouseProduct> warehouseProducts = warehouseProductRepository.findByProductIds(productIds);
+
+        Map<UUID, WarehouseProduct> warehouseProductMap = warehouseProducts.stream()
+                .collect(Collectors.toMap(WarehouseProduct::getProductId, wp -> wp));
+
+        List<String> insufficientProducts = new ArrayList<>();
+        double totalWeight = 0.0;
+        double totalVolume = 0.0;
+        boolean hasFragile = false;
+
+        for (Map.Entry<UUID, Integer> entry : orderProducts.entrySet()) {
+            UUID productId = entry.getKey();
+            Integer requestedQuantity = entry.getValue();
+
+            WarehouseProduct warehouseProduct = warehouseProductMap.get(productId);
+
+            if (warehouseProduct == null) {
+                insufficientProducts.add(productId + " (не найден на складе)");
+                continue;
+            }
+
+            if (warehouseProduct.getQuantity() < requestedQuantity) {
+                insufficientProducts.add(String.format("%s (запрошено: %d, доступно: %d)",
+                        productId, requestedQuantity, warehouseProduct.getQuantity()));
+                continue;
+            }
+
+            warehouseProduct.setQuantity(warehouseProduct.getQuantity() - requestedQuantity);
+
+            totalWeight += warehouseProduct.getWeight() * requestedQuantity;
+            totalVolume += warehouseProduct.getVolume() * requestedQuantity;
+            if (warehouseProduct.getFragile()) {
+                hasFragile = true;
+            }
+        }
+
+        if (!insufficientProducts.isEmpty()) {
+            String errorMessage = "Недостаточное количество для сборки заказа: " +
+                    String.join(", ", insufficientProducts);
+            throw new ProductInShoppingCartLowQuantityInWarehouse(errorMessage);
+        }
+
+        warehouseProductRepository.saveAll(warehouseProducts);
+
+        log.info("Заказ {} собран. Вес: {}, Объем: {}, Хрупкий: {}",
+                request.getOrderId(), totalWeight, totalVolume, hasFragile);
+
+        OrderBooking orderBooking = new OrderBooking();
+        orderBooking.setOrderId(request.getOrderId());
+        orderBooking.setStatus(WarehouseOrderStatus.ASSEMBLED);
+        orderBooking.setAssembledAt(LocalDateTime.now());
+        orderBookingRepository.save(orderBooking);
+
+        log.info("Заказ {} отмечен как собранный на складе", request.getOrderId());
+
+        BookedProductsDto bookedProducts = new BookedProductsDto();
+        bookedProducts.setDeliveryWeight(totalWeight);
+        bookedProducts.setDeliveryVolume(totalVolume);
+        bookedProducts.setFragile(hasFragile);
+
+        return bookedProducts;
+    }
+
+    @Override
+    @Transactional
+    public void acceptReturn(Map<UUID, Integer> products) {
+        if (products.isEmpty()) {
+            log.warn("Получен пустой список товаров для возврата");
+            return;
+        }
+
+        List<UUID> productIds = new ArrayList<>(products.keySet());
+        List<WarehouseProduct> warehouseProducts = warehouseProductRepository.findByProductIds(productIds);
+
+        Map<UUID, WarehouseProduct> warehouseProductMap = warehouseProducts.stream()
+                .collect(Collectors.toMap(WarehouseProduct::getProductId, wp -> wp));
+
+        int updatedCount = 0;
+
+        for (Map.Entry<UUID, Integer> entry : products.entrySet()) {
+            UUID productId = entry.getKey();
+            Integer quantity = entry.getValue();
+
+            WarehouseProduct warehouseProduct = warehouseProductMap.get(productId);
+
+            if (warehouseProduct != null) {
+                warehouseProduct.setQuantity(warehouseProduct.getQuantity() + quantity);
+                updatedCount++;
+                log.debug("Возвращено {} единиц товара {}", quantity, productId);
+            } else {
+                log.warn("Товар {} не найден на складе для возврата", productId);
+            }
+        }
+
+        if (updatedCount > 0) {
+            warehouseProductRepository.saveAll(warehouseProducts);
+            log.info("Возвращено {} товаров на склад", updatedCount);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void shippedToDelivery(ShippedToDeliveryRequest request) {
+        OrderBooking orderBooking = orderBookingRepository.findByOrderId(request.getOrderId())
+                .orElseThrow(() -> new RuntimeException("Заказ не найден в собранных: " + request.getOrderId()));
+
+        if (orderBooking.getStatus() != WarehouseOrderStatus.ASSEMBLED) {
+            throw new RuntimeException("Заказ " + request.getOrderId() +
+                    " не в статусе ASSEMBLED. Текущий статус: " + orderBooking.getStatus());
+        }
+
+        orderBooking.setDeliveryId(request.getDeliveryId());
+        orderBooking.setStatus(WarehouseOrderStatus.SHIPPED);
+        orderBooking.setShippedAt(LocalDateTime.now());
+
+        orderBookingRepository.save(orderBooking);
+
+        log.info("Товары для заказа {} переданы в доставку. ID доставки: {}",
+                request.getOrderId(), request.getDeliveryId());
     }
 }

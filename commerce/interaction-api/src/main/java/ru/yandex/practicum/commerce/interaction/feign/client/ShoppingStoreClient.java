@@ -1,18 +1,21 @@
 package ru.yandex.practicum.commerce.interaction.feign.client;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import ru.yandex.practicum.commerce.interaction.dto.ProductDto;
+import ru.yandex.practicum.commerce.interaction.dto.shoppingstore.ProductDto;
 import ru.yandex.practicum.commerce.interaction.enums.ProductCategory;
 import ru.yandex.practicum.commerce.interaction.enums.QuantityState;
+import ru.yandex.practicum.commerce.interaction.feign.client.fallback.ShoppingStoreClientFallback;
 import ru.yandex.practicum.commerce.interaction.feign.operations.ShoppingStoreOperations;
 
 import java.util.UUID;
 
-@FeignClient(name = "shopping-store")
+@FeignClient(name = "shopping-store", fallback = ShoppingStoreClientFallback.class)
+@CircuitBreaker(name = "shopping-store")
 public interface ShoppingStoreClient extends ShoppingStoreOperations {
 
     @Override

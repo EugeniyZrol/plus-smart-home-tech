@@ -3,8 +3,8 @@ package ru.yandex.practicum.commerce.shoppingcart.controller;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import ru.yandex.practicum.commerce.interaction.dto.ChangeProductQuantityRequest;
-import ru.yandex.practicum.commerce.interaction.dto.ShoppingCartDto;
+import ru.yandex.practicum.commerce.interaction.dto.warehouse.ChangeProductQuantityRequest;
+import ru.yandex.practicum.commerce.interaction.dto.shoppingcart.ShoppingCartDto;
 import ru.yandex.practicum.commerce.interaction.feign.operations.ShoppingCartOperations;
 import ru.yandex.practicum.commerce.shoppingcart.service.ShoppingCartService;
 
@@ -59,5 +59,11 @@ public class ShoppingCartController implements ShoppingCartOperations {
     public ResponseEntity<Void> deactivateCurrentShoppingCart(@RequestParam String username) {
         shoppingCartService.deactivateCurrentShoppingCart(username);
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/{shoppingCartId}")
+    public ResponseEntity<ShoppingCartDto> getShoppingCartById(@PathVariable UUID shoppingCartId) {
+        ShoppingCartDto shoppingCart = shoppingCartService.getShoppingCartById(shoppingCartId);
+        return ResponseEntity.ok(shoppingCart);
     }
 }
